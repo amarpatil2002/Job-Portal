@@ -2,7 +2,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import ApplyJob from "./Pages/Candidate/ApplyJob";
 import Applications from "./Pages/Candidate/Applications";
 import PageNotFound from "./Pages/PageNotFound";
-import AppContextProvider from "./context/AppContext";
+import AuthContextProvider from "./context/AuthContext";
 import LandingPage from "./Pages/LandingPage";
 import ProtectedRoutes from "./Pages/ProtectedRoutes/ProtectedRoutes";
 import PublicRoutes from "./Pages/PublicRoutes/PublicRoutes";
@@ -10,6 +10,7 @@ import Login from "./Pages/Auth/Login";
 import Register from "./Pages/Auth/Register";
 import Dashboard from "./Pages/Dashboard/Dashboard";
 import ForgotPassword from "./Pages/Auth/ForgotPassword";
+import VerifyOTPSetNewPassword from "./Pages/Auth/VerifyOTPSetNewPassword";
 
 function App() {
   const router = createBrowserRouter([
@@ -30,8 +31,12 @@ function App() {
           element: <Register />,
         },
         {
-          path:'/forgot-password',
+          path:'forgot-password',
           element:<ForgotPassword />
+        },
+        {
+          path:'set-new-password',
+          element:<VerifyOTPSetNewPassword />
         }
       ],
     },
@@ -45,11 +50,11 @@ function App() {
           element: <Dashboard />,
         },
         {
-          path: "/apply-job/:id",
+          path: "apply-job/:id",
           element: <ApplyJob />,
         },
         {
-          path: "/applications",
+          path: "applications",
           element: <Applications />,
         },
       ],
@@ -62,9 +67,9 @@ function App() {
   ]);
 
   return (
-    <AppContextProvider>
+    <AuthContextProvider>
       <RouterProvider router={router} />
-    </AppContextProvider>
+    </AuthContextProvider>
   );
 }
 
