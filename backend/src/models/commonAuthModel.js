@@ -20,8 +20,9 @@ const userSchema = new mongoose.Schema({
         type:mongoose.Schema.Types.ObjectId,
         ref:"Company",
         default:null
-    }
-} , {timetamps:true})
+    },
+    refreshToken:{type:String}
+} , {timestamps:true})
 
 const userModel = mongoose.model("User" , userSchema)
 

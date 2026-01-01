@@ -25,6 +25,6 @@ const candidateSchema = new mongoose.Schema({
     }
 }, { timestamps: true })
 
-const candidateModel = mongoose.model("Compnay", candidateSchema)
+const candidateModel = mongoose.model("Candidate", candidateSchema)
 
 module.exports = candidateModel
