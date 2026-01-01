@@ -1,5 +1,5 @@
 import React, { useContext, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { object, ref, string } from "yup";
 import { AuthContext } from "../../context/AuthContext";
 
@@ -23,11 +23,11 @@ function VerifyOTPSetNewPassword() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
   const [error, setError] = useState({});
 
   const { setNewPassword } = useContext(AuthContext);
 
+  const navigate = useNavigate()
   const location = useLocation();
   const email = location.state?.email || "";
 
@@ -44,12 +44,13 @@ function VerifyOTPSetNewPassword() {
       await schema.validate(formData, { abortEarly: false });
 
       const payload = {
+           email,
         ...formData,
-        email,
+        
       };
-
-      console.log(payload);
+      // console.log(payload);
       await setNewPassword(payload);
+      navigate('/login')
     } catch (err) {
       if (err.inner) {
         const validationErrors = {};
