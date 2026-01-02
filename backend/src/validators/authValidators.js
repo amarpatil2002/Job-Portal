@@ -3,6 +3,8 @@ const yup = require('yup')
 exports.registerSchema = yup.object({
   email: yup
     .string()
+    .trim()
+    .lowercase()
     .email("Invalid email format")
     .required("Email is required"),
 
@@ -19,6 +21,7 @@ exports.registerSchema = yup.object({
 
   role: yup
     .string()
+    .trim()
     .oneOf(["candidate", "company"], "Invalid role selected")
     .required("Role is required"),
 
@@ -36,6 +39,8 @@ exports.registerSchema = yup.object({
 exports.loginSchema = yup.object({
   email: yup
     .string()
+    .trim()
+    .lowercase()
     .email("Invalid email format")
     .required("Email is required"),
 
