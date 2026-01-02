@@ -10,12 +10,14 @@ exports.registerSchema = yup.object({
 
   password: yup
     .string()
+    .trim()
     .min(5, "Password must be at least 6 characters")
     .max(32, "Password cannot exceed 32 characters")
     .required("Password is required"),
 
   confirmPassword: yup
     .string()
+    .trim()
     .oneOf([yup.ref("password")], "Passwords must match")
     .required("Confirm password is required"),
 
@@ -49,4 +51,32 @@ exports.loginSchema = yup.object({
     .min(5, "Password must be at least 5 characters")
     .max(32, "Password cannot exceed 32 characters")
     .required("Password is required"),
+});
+
+exports.resetPasswordSchema = yup.object({
+  email: yup
+    .string()
+    .trim()
+    .lowercase()
+    .email("Invalid email format")
+    .required("Email is required"),
+
+  password: yup
+    .string()
+    .trim()
+    .min(5, "Password must be at least 6 characters")
+    .max(32, "Password cannot exceed 32 characters")
+    .required("Password is required"),
+
+  confirmPassword: yup
+    .string()
+    .trim()
+    .oneOf([yup.ref("password")], "Passwords must match")
+    .required("Confirm password is required"),
+
+    otp: yup
+    .string()
+    .trim()
+    .min(6)
+    .max(6)
 });

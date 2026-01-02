@@ -11,8 +11,8 @@ const transportor = nodemailer.createTransport({
 exports.veriyUserEmail = async ({ email, otp }) => {
     try {
         const mailOptions = {
-            // from: `"Job Portal Support" <${process.env.EMAIL_USER}>`,
-            from:process.env.EMAIL_USER,
+            from: `"Job Portal Support" <${process.env.EMAIL_USER}>`,
+            // from:process.env.EMAIL_USER,
             to: email,
             subject: "Verify Your Email",
             html: `
@@ -20,7 +20,7 @@ exports.veriyUserEmail = async ({ email, otp }) => {
           <h2>Email Verification</h2>
           <p>Your verification OTP is:</p>
           <h1 style="letter-spacing:4px">${otp}</h1>
-          <p>This OTP is valid for <b>10 minutes</b>.</p>
+          <p>This OTP is valid for <b>1 minute</b>.</p>
           <p>If you didn’t request this, ignore this email.</p>
         </div>
       `,
@@ -45,7 +45,7 @@ exports.setResetOtpEmail = async ({ email, otp }) => {
           <h2>Password Reset Request</h2>
           <p>Use the OTP below to reset your password:</p>
           <h1 style="letter-spacing: 4px;">${otp}</h1>
-          <p>This OTP is valid for <b>10 minutes</b>.</p>
+          <p>This OTP is valid for <b>1 minute</b>.</p>
           <p>If you did not request this, please ignore this email.</p>
           <br/>
           <p>— Job Portal Team</p>
@@ -53,7 +53,7 @@ exports.setResetOtpEmail = async ({ email, otp }) => {
       `,
         };
 
-        console.log(mailOptions);
+        // console.log(mailOptions);
         await transportor.sendMail(mailOptions)
 
     } catch (error) {

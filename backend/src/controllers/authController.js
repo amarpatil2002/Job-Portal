@@ -41,7 +41,7 @@ exports.registerController = async (req, res) => {
         //verify user
         const otp = Math.floor(100000 + Math.random() * 900000).toString()
         const hashedOTP = await bcrypt.hash(otp, 10)
-        const otpExpiresAt = new Date(Date.now() + 1 * 60 * 1000)
+        const otpExpiresAt = new Date(Date.now() + Number(process.env.OTP_EXPIRATION_MINUTES) * 60 * 1000)
 
         // cleanup the database every certain time like - 2 min
         const pendingUserCleanupsAt = new Date(Date.now() + 5 * 60 * 1000)
@@ -86,7 +86,7 @@ exports.verfyUserController = async (req, res) => {
             return res.status(400).json({ success: false, message: "OTP expired or invalid" })
         }
 
-        if (Date.now() > pendingUser.otpExpiresAt) {
+        if (new Date() > pendingUser.otpExpiresAt) {
             return res.status(400).json({ success: false, message: "OTP expired" })
         }
 
@@ -162,28 +162,31 @@ exports.resendVerifyOTP = async (req, res) => {
         }
 
         const pendingUser = await pendingUserModel.findOne({ email })
-
+        // console.log(pendingUser);
         if (!pendingUser) {
-            return res.status(400).json({ success: false, message: "User not found" })
+            return res.status(200).json({ success: false, message: "If the email exists, OTP has been sent" })
         }
 
-        if(pendingUser.resendCount > 3){
-            return res.status(400).json({ success: false, message: "Re-send limit reached,Please try agian later" })
+        if (pendingUser.resendCount > 2) {
+            return res.status(429).json({ success: false, message: "OTP resend limit reached,Please try agian later" })
         }
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString()
         const hashedOTP = await bcrypt.hash(otp, 10)
-        const expiresOTP = new Date(Date.now() + 1 * 60 * 1000)
+        const expiryMinutes = Number(process.env.OTP_EXPIRATION_MINUTES) || 2
+        const expiresOTP = new Date(Date.now() + expiryMinutes * 60 * 1000)
         const cleanupsAt = new Date(Date.now() + 5 * 60 * 1000)
 
         pendingUser.otp = hashedOTP
         pendingUser.otpExpiresAt = expiresOTP
-        pendingUser.pendingUserCleanupsAt=cleanupsAt
+        pendingUser.pendingUserCleanupsAt = cleanupsAt
         pendingUser.resendCount += 1
 
         await pendingUser.save()
 
         await veriyUserEmail({ otp, email })
+
+        res.status(200).json({ success: true, message: "OTP resent successfully" })
 
     } catch (error) {
         return res.status(500).json({ success: false, message: "Internal server error" })
@@ -283,30 +286,73 @@ exports.forgotPasswordController = async (req, res) => {
             return res.status(400).json({ success: false, message: "Email is required" })
         }
 
-        const emailExists = await userModel.findOne({ email })
+        const userExists = await userModel.findOne({ email })
 
-        if (!emailExists) {
-            return res.status(400).json({ success: false, message: "User not found" })
+        if (!userExists) {
+            return res.status(400).json({ success: false, message: "If the email exists, an OTP has been sent" })
+        }
+
+        //  Remove old reset requests
+        await passwordResetModel.deleteMany({ userId: userExists._id });
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString()
+        const hashedOTP = await bcrypt.hash(otp, 10)
+        const expiryMinutes = Number(process.env.OTP_EXPIRATION_MINUTES) || 2
+        const expiresOTP = new Date(Date.now() + expiryMinutes * 60 * 1000)
+
+        await passwordResetModel.create(
+            {
+                userId: userExists._id,
+                otp: hashedOTP,
+                expiresOTP: expiresOTP,
+            }
+        )
+
+        await setResetOtpEmail({ email, otp })
+
+        res.status(200).json({ success: true, message: "OTP sent successfully" })
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, message: "Internal server error" })
+    }
+}
+
+exports.otpResendPasswordController = async (req, res) => {
+    try {
+        const { email } = req.body
+
+        if (!email) {
+            return res.status(400).json({ success: false, message: "Email is required" })
+        }
+
+        const userExists = await userModel.findOne({ email })
+
+        if (!userExists) {
+            return res.status(400).json({ success: false, message: "If the email exists, an OTP has been sent" })
+        }
+        // console.log(userExists);
+        const resetPasswordUser = await passwordResetModel.findOne({ userId: userExists._id })
+        // console.log(resetPasswordUser);
+
+        if (resetPasswordUser.resendCount > 2) {
+            return res.status(429).json({ success: false, message: "OTP resend limit reached,Please try agian later" })
         }
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString()
         const hashedOTP = await bcrypt.hash(otp, 10)
-        const expiresOTP = new Date(Date.now() + 2 * 60 * 1000)
+        const expiryMinutes = Number(process.env.OTP_EXPIRATION_MINUTES) || 2
+        const expiresOTP = new Date(Date.now() + expiryMinutes * 60 * 1000)
 
-        await passwordResetModel.create(
-            {
-                userId: emailExists._id,
-                otp: hashedOTP,
-                expiresOTP: expiresOTP,
-                attempts: 0
-            }
-        )
+        resetPasswordUser.otp = hashedOTP,
+        resetPasswordUser.expiresOTP = expiresOTP,
+        resetPasswordUser.resendCount += 1
 
-        await setResetOtpEmail(email, otp)
+        await setResetOtpEmail({ otp, email })
 
-        await emailExists.save()
+        await resetPasswordUser.save()
 
-        res.status(200).json({ success: true, message: "OTP sent successfully", hashedOTP, expiresOTP, current: new Date(Date.now()) })
+        return res.status(200).json({ success: true, message: "OTP resent successfully" })
 
     } catch (error) {
         console.log(error);
@@ -315,7 +361,51 @@ exports.forgotPasswordController = async (req, res) => {
 }
 
 exports.resetPasswordController = async (req, res) => {
+    try {
+        const { email, otp, password, confirmPassword } = req.body
 
+        if (!email || !otp || !password || !confirmPassword) {
+            return res.status(400).json({ success: false, message: "All fields are required" })
+        }
+
+        const user = await userModel.findOne({ email })
+        if (!user) {
+            return res.status(400).json({ success: false, message: "Invalid OTP or expired" })
+        }
+
+        const resetPasswordDoc = await passwordResetModel.findOne({ userId: user._id })
+        if(!resetPasswordDoc){
+            return res.status(400).json({ success: false, message: "OTP expired or Invalid" })
+        }
+
+        if (password !== confirmPassword) {
+            return res.status(400).json({ success: false, message: "Password do not match" })
+        }
+
+        // console.log(new Date());
+        // console.log(resetPasswordDoc.expiresOTP);
+        if (new Date() > resetPasswordDoc.expiresOTP) {
+            return res.status(400).json({ success: false, message: "OTP expired" })
+        }
+
+        const isMatchOTP = await bcrypt.compare(otp, resetPasswordDoc.otp)
+        if (!isMatchOTP) {
+            return res.status(400).json({ success: false, message: "Invalid OTP" })
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 12)
+
+        user.password = hashedPassword
+        await user.save()
+
+        await passwordResetModel.deleteMany({ userId: user._id })
+
+        return res.status(200).json({ success: true, message: "Password changed successfully" })
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, message: "Internal server error" })
+    }
 }
 
 exports.logoutController = async (req, res) => {
