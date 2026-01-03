@@ -6,7 +6,7 @@ const passResetSchema = new mongoose.Schema({
         ref:"User"
     },
     otp:{type:String},
-    expiresOTP:{type:String},
+    expiresOTP:{type:Date},
     resendCount:{type:Number,default:0},
 
 } , {timestamps:true})

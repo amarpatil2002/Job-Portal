@@ -218,8 +218,8 @@ exports.loginController = async (req, res) => {
             role: userExists.role
         }
 
-        const accessToken = jwt.sign(tokenPayload, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "1m" })
-        const refreshToken = jwt.sign(tokenPayload, process.env.REFRESH_TOKEN_SECRET, { expiresIn: "5m" })
+        const accessToken = jwt.sign(tokenPayload, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.ACCESS_TOKEN_EXPIRATION })
+        const refreshToken = jwt.sign(tokenPayload, process.env.REFRESH_TOKEN_SECRET, { expiresIn: process.env.REFRESH_TOKEN_EXPIRATION })
 
         userExists.refreshToken = refreshToken
         await userExists.save()
@@ -227,8 +227,8 @@ exports.loginController = async (req, res) => {
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            sameSite: "strict",
-            path: "/api/auth/refresh-token"
+            sameSite: "lax",
+            path: "/"
         })
         res.status(200).json({ success: true, message: "Login successfull", accessToken, tokenPayload })
 
@@ -247,9 +247,9 @@ exports.refreshTokenController = async (req, res) => {
             return res.status(401).json({ success: false, message: "Refresh token missing" })
         }
 
-        console.log(token);
+        // console.log(token);
         const tokenExistsInDB = await userModel.findOne({ refreshToken: token })
-        console.log(tokenExistsInDB);
+        // console.log(tokenExistsInDB);
         if (!tokenExistsInDB) {
             return res.status(400).json({ success: false, message: "Invalid refresh token" })
         }
@@ -261,14 +261,14 @@ exports.refreshTokenController = async (req, res) => {
                 res.clearCookie("refreshToken", {
                     httpOnly: true,
                     secure: process.env.NODE_ENV === "production",
-                    sameSite: "strict",
-                    path: "/api/auth/refresh-token"
+                    sameSite: "lax",
+                    path: "/"
                 })
 
                 return res.status(401).json({ success: false, message: "Expired refresh token" })
             }
 
-            const newAccessToken = jwt.sign({ id: decode.id, email: decode.email, role: decode.role }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "1m" })
+            const newAccessToken = jwt.sign({ id: decode.id, email: decode.email, role: decode.role }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.ACCESS_TOKEN_EXPIRATION })
             res.status(200).json({ success: true, message: "success", accessToken: newAccessToken })
         })
 
@@ -345,8 +345,8 @@ exports.otpResendPasswordController = async (req, res) => {
         const expiresOTP = new Date(Date.now() + expiryMinutes * 60 * 1000)
 
         resetPasswordUser.otp = hashedOTP,
-        resetPasswordUser.expiresOTP = expiresOTP,
-        resetPasswordUser.resendCount += 1
+            resetPasswordUser.expiresOTP = expiresOTP,
+            resetPasswordUser.resendCount += 1
 
         await setResetOtpEmail({ otp, email })
 
@@ -374,7 +374,7 @@ exports.resetPasswordController = async (req, res) => {
         }
 
         const resetPasswordDoc = await passwordResetModel.findOne({ userId: user._id })
-        if(!resetPasswordDoc){
+        if (!resetPasswordDoc) {
             return res.status(400).json({ success: false, message: "OTP expired or Invalid" })
         }
 
@@ -409,7 +409,39 @@ exports.resetPasswordController = async (req, res) => {
 }
 
 exports.logoutController = async (req, res) => {
+    try {
+        const token = req.cookies?.refreshToken
+        // console.log(token);
+        if(!token){
+            return res.status(200).json({success:true,message: "Logged out successfully"})
+        }
 
+        //
+        // const user = await userModel.findOne({refreshToken:token})
+        // console.log(user);
+        // if(!user){
+        //     return res.status(400).json({success:false,message:"Invalid or Expired refresh token"})
+        // }
+
+        await userModel.findOneAndUpdate(
+            {refreshToken:token},
+            {$unset:{refreshToken:""}}
+        )
+
+        res.clearCookie("refreshToken" , {
+            httpOnly:true,
+            secure:process.env.NODE_ENV === "production",
+            sameSite:'lax',
+            path:'/'
+        })
+
+        res.status(200).json({success:true,message: "Logged out successfully"})
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, message: "Internal server error" })
+
+    }
 }
 
 exports.getData = async (req, res) => {

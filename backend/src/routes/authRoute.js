@@ -17,8 +17,9 @@ router.post('/auth/forgot-password', forgotPasswordController)
 router.post('/auth/resend-reset-otp', otpResendPasswordController)
 router.post('/auth/reset-password',validate(resetPasswordSchema) , resetPasswordController)
 
+router.post('/auth/logout', verifyToken, logoutController)
 router.get('/getdata', verifyToken, getData)
-router.post('logout', verifyToken, logoutController)
+
 
 
 module.exports = router
