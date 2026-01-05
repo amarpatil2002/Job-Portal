@@ -2,6 +2,7 @@ import React, { useContext, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { object, ref, string } from "yup";
 import { AuthContext } from "../../context/AuthContext";
+import { Eye, EyeOff } from "lucide-react";
 
 const schema = object({
   password: string()
@@ -27,7 +28,7 @@ function VerifyOTPSetNewPassword() {
 
   const { setNewPassword } = useContext(AuthContext);
 
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email || "";
 
@@ -44,13 +45,12 @@ function VerifyOTPSetNewPassword() {
       await schema.validate(formData, { abortEarly: false });
 
       const payload = {
-           email,
+        email,
         ...formData,
-        
       };
       // console.log(payload);
       await setNewPassword(payload);
-      navigate('/login')
+      navigate("/login");
     } catch (err) {
       if (err.inner) {
         const validationErrors = {};
@@ -81,7 +81,7 @@ function VerifyOTPSetNewPassword() {
               value={formData.otp}
               onChange={handleChange}
               placeholder="Enter OTP"
-              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
             />
           </div>
 
@@ -98,15 +98,20 @@ function VerifyOTPSetNewPassword() {
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="Enter password"
-                className="w-full border rounded-lg px-3 py-2 pr-10"
+                className="w-full border rounded-lg px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
 
               <button
                 type="button"
                 onClick={() => setShowPassword((p) => !p)}
-                className="absolute right-3 top-2 text-gray-600"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                className="absolute right-3 top-2.5 text-gray-600 hover:text-indigo-600 focus:outline-none"
               >
-                {showPassword ? "🙈" : "👁️"}
+                {showPassword ? (
+                  <EyeOff className="w-5 h-5" />
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
               </button>
             </div>
 
@@ -128,15 +133,22 @@ function VerifyOTPSetNewPassword() {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 placeholder="Confirm password"
-                className="w-full border rounded-lg px-3 py-2 pr-10"
+                className="w-full border rounded-lg px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
 
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword((p) => !p)}
-                className="absolute right-3 top-2 text-gray-600"
+                aria-label={
+                  showConfirmPassword ? "Hide password" : "Show password"
+                }
+                className="absolute right-3 top-2.5 text-gray-600 hover:text-indigo-600 focus:outline-none"
               >
-                {showConfirmPassword ? "🙈" : "👁️"}
+                {showConfirmPassword ? (
+                  <EyeOff className="w-5 h-5" />
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
               </button>
             </div>
 
@@ -150,14 +162,15 @@ function VerifyOTPSetNewPassword() {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 transition"
+            className="w-full bg-indigo-600 text-white py-2 rounded-lg font-medium hover:bg-indigo-700 transition focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             Set Password
           </button>
+
           {/* BACK TO LOGIN */}
-          <p className="text-center text-sm mt-2">
+          <p className="text-center text-sm mt-2 text-gray-600">
             Remember password?{" "}
-            <Link to="/login" className="text-blue-600 hover:underline">
+            <Link to="/login" className="text-indigo-600 hover:underline">
               Login
             </Link>
           </p>

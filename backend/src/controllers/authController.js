@@ -10,6 +10,8 @@ const { pendingUserModel } = require("../models/pendingUserModel")
 
 
 exports.registerController = async (req, res) => {
+    const session = await mongoose.startSession()
+
     try {
         // console.log(req.body);
         const { email, password, confirmPassword, role, companyName } = req.body
@@ -22,6 +24,10 @@ exports.registerController = async (req, res) => {
             return res.status(400).json({ success: false, message: "Invalid role selected" })
         }
 
+        if (role === "company" && !companyName) {
+            return res.status(400).json({ success: false, message: "Company name is required" })
+        }
+
         const emailExists = await userModel.findOne({ email })
         // console.log(emailExists);
 
@@ -29,8 +35,9 @@ exports.registerController = async (req, res) => {
             return res.status(400).json({ success: false, message: "Email already registered" })
         }
 
+        session.startTransaction()
         //delete all pending user
-        await pendingUserModel.deleteMany({ email })
+        await pendingUserModel.deleteMany({ email }).session(session)
 
         if (password !== confirmPassword) {
             return res.status(400).json({ success: false, message: "Passwords do not match" })
@@ -46,7 +53,7 @@ exports.registerController = async (req, res) => {
         // cleanup the database every certain time like - 2 min
         const pendingUserCleanupsAt = new Date(Date.now() + 5 * 60 * 1000)
 
-        const pendingUser = await pendingUserModel.findOneAndUpdate(
+        await pendingUserModel.findOneAndUpdate(
             { email },
             {
                 email,
@@ -57,14 +64,20 @@ exports.registerController = async (req, res) => {
                 otpExpiresAt: otpExpiresAt,
                 pendingUserCleanupsAt: pendingUserCleanupsAt,
             },
-            { upsert: true, new: true }
+            { upsert: true, new: true, session }
         )
+
+        await session.commitTransaction()
+        session.endSession()
 
         await veriyUserEmail({ email, otp })
 
-        res.status(200).json({ success: true, message: "Email sent for email verification" })
+        res.status(200).json({ success: true, message: "verification email sent" })
 
     } catch (error) {
+        await session.abortTransaction()
+        session.endSession()
+
         console.log(error);
         return res.status(500).json({ success: false, message: "Internal server error" })
     }
@@ -164,7 +177,7 @@ exports.resendVerifyOTP = async (req, res) => {
         const pendingUser = await pendingUserModel.findOne({ email })
         // console.log(pendingUser);
         if (!pendingUser) {
-            return res.status(200).json({ success: false, message: "If the email exists, OTP has been sent" })
+            return res.status(400).json({ success: false, message: "Please try after some time" })
         }
 
         if (pendingUser.resendCount > 2) {
@@ -186,7 +199,7 @@ exports.resendVerifyOTP = async (req, res) => {
 
         await veriyUserEmail({ otp, email })
 
-        res.status(200).json({ success: true, message: "OTP resent successfully" })
+        return res.status(200).json({ success: true, message: "OTP resent successfully" })
 
     } catch (error) {
         return res.status(500).json({ success: false, message: "Internal server error" })
@@ -212,25 +225,25 @@ exports.loginController = async (req, res) => {
             return res.status(401).json({ success: false, message: "Invalid credentials" })
         }
 
-        const tokenPayload = {
+        const user = {
             id: userExists._id,
             email: userExists.email,
             role: userExists.role
         }
 
-        const accessToken = jwt.sign(tokenPayload, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.ACCESS_TOKEN_EXPIRATION })
-        const refreshToken = jwt.sign(tokenPayload, process.env.REFRESH_TOKEN_SECRET, { expiresIn: process.env.REFRESH_TOKEN_EXPIRATION })
+        const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.ACCESS_TOKEN_EXPIRATION })
+        const refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN_SECRET, { expiresIn: process.env.REFRESH_TOKEN_EXPIRATION })
 
         userExists.refreshToken = refreshToken
         await userExists.save()
 
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
+            secure: true,
             sameSite: "lax",
             path: "/"
         })
-        res.status(200).json({ success: true, message: "Login successfull", accessToken, tokenPayload })
+        res.status(200).json({ success: true, message: "Login successfull", accessToken, user })
 
     } catch (error) {
         console.log(error);
@@ -251,25 +264,26 @@ exports.refreshTokenController = async (req, res) => {
         const tokenExistsInDB = await userModel.findOne({ refreshToken: token })
         // console.log(tokenExistsInDB);
         if (!tokenExistsInDB) {
-            return res.status(400).json({ success: false, message: "Invalid refresh token" })
+            return res.status(401).json({ success: false, message: "Invalid refresh token" })
         }
 
-        jwt.verify(token, process.env.REFRESH_TOKEN_SECRET, async (error, decode) => {
+        await jwt.verify(token, process.env.REFRESH_TOKEN_SECRET, async (error, decode) => {
             if (error) {
                 tokenExistsInDB.refreshToken = null
                 await tokenExistsInDB.save()
+
                 res.clearCookie("refreshToken", {
                     httpOnly: true,
-                    secure: process.env.NODE_ENV === "production",
-                    sameSite: "lax",
-                    path: "/"
+                    secure: true,
+                    sameSite: 'lax',
+                    path: '/'
                 })
 
                 return res.status(401).json({ success: false, message: "Expired refresh token" })
             }
 
-            const newAccessToken = jwt.sign({ id: decode.id, email: decode.email, role: decode.role }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.ACCESS_TOKEN_EXPIRATION })
-            res.status(200).json({ success: true, message: "success", accessToken: newAccessToken })
+            const newAccessToken = await jwt.sign({ id: decode.id, email: decode.email, role: decode.role }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.ACCESS_TOKEN_EXPIRATION })
+            return res.status(200).json({ success: true, message: "success", accessToken: newAccessToken })
         })
 
     } catch (error) {
@@ -412,8 +426,8 @@ exports.logoutController = async (req, res) => {
     try {
         const token = req.cookies?.refreshToken
         // console.log(token);
-        if(!token){
-            return res.status(200).json({success:true,message: "Logged out successfully"})
+        if (!token) {
+            return res.status(200).json({ success: true, message: "Logged out successfully" })
         }
 
         //
@@ -424,18 +438,18 @@ exports.logoutController = async (req, res) => {
         // }
 
         await userModel.findOneAndUpdate(
-            {refreshToken:token},
-            {$unset:{refreshToken:""}}
+            { refreshToken: token },
+            { $unset: { refreshToken: "" } }
         )
 
-        res.clearCookie("refreshToken" , {
-            httpOnly:true,
-            secure:process.env.NODE_ENV === "production",
-            sameSite:'lax',
-            path:'/'
+        res.clearCookie("refreshToken", {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'lax',
+            path: '/'
         })
 
-        res.status(200).json({success:true,message: "Logged out successfully"})
+        res.status(200).json({ success: true, message: "Logged out successfully" })
 
     } catch (error) {
         console.log(error);
@@ -444,8 +458,20 @@ exports.logoutController = async (req, res) => {
     }
 }
 
-exports.getData = async (req, res) => {
-    res.status(200).json({ success: true, message: "Data fetched successfully" })
+exports.getUser = async (req, res) => {
+    try {
+        const userId = req.userId
+        const user = await userModel.findById(userId).select("_id role email")
+        if (!user) {
+            return res.status(400).json({ success: false, message: "User not found" })
+        }
+
+        return res.status(200).json({ success: true, message: "Data fetched successfully", user })
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, message: "Internal server error" })
+    }
+
 }
 
 

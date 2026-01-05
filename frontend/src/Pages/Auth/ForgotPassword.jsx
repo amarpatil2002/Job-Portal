@@ -46,64 +46,72 @@ function ForgotPassword() {
     }
   };
 
-  return (
-    <div className="min-h-screen flex justify-center items-center bg-gray-100">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white shadow-xl rounded-2xl p-6 w-full max-w-md space-y-4"
-      >
-        <h2 className="text-2xl font-semibold text-center">
-          Forgot Password
-        </h2>
+return (
+  <div className="min-h-screen flex justify-center items-center bg-gray-100">
+    <form
+      onSubmit={handleSubmit}
+      className="bg-white shadow-xl rounded-2xl p-6 w-full max-w-md space-y-4"
+    >
+      <h2 className="text-2xl font-semibold text-center text-gray-900">
+        Forgot Password
+      </h2>
 
-        <p className="text-sm text-gray-600 text-center">
-          Enter your registered email to receive OTP.
-        </p>
+      <p className="text-sm text-gray-600 text-center">
+        Enter your registered email to receive OTP.
+      </p>
 
-        {/* EMAIL */}
-        <div>
-          <label className="block font-medium mb-1">Email</label>
+      {/* EMAIL */}
+      <div>
+        <label className="block font-medium mb-1 text-gray-700">
+          Email
+        </label>
 
-          <input
-            type="text"
-            name="email"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              setErrors({});
-            }}
-            placeholder="Enter your email"
-            className="w-full border rounded-lg p-2"
-          />
+        <input
+          type="text"
+          name="email"
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            setErrors({});
+          }}
+          placeholder="Enter your email"
+          className="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        />
 
-          {errors.email && (
-            <p className="text-red-500 text-sm mt-1">{errors.email}</p>
-          )}
-        </div>
-
-        {/* SERVER MESSAGE */}
-        {message && (
-          <p className="text-green-600 text-sm text-center">{message}</p>
+        {errors.email && (
+          <p className="text-red-500 text-sm mt-1">{errors.email}</p>
         )}
+      </div>
 
-        {/* SUBMIT */}
-        <button
-          type="submit"
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition"
-        >
-          Send OTP
-        </button>
-
-        {/* BACK TO LOGIN */}
-        <p className="text-center text-sm mt-2">
-          Remember password?{" "}
-          <Link to="/login" className="text-blue-600 hover:underline">
-            Login
-          </Link>
+      {/* SERVER MESSAGE */}
+      {message && (
+        <p className="text-indigo-600 text-sm text-center">
+          {message}
         </p>
-      </form>
-    </div>
-  );
+      )}
+
+      {/* SUBMIT */}
+      <button
+        type="submit"
+        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-indigo-500"
+      >
+        Send OTP
+      </button>
+
+      {/* BACK TO LOGIN */}
+      <p className="text-center text-sm mt-2 text-gray-600">
+        Remember password?{" "}
+        <Link
+          to="/login"
+          className="text-indigo-600 hover:underline"
+        >
+          Login
+        </Link>
+      </p>
+    </form>
+  </div>
+);
+
 }
 
 export default ForgotPassword;

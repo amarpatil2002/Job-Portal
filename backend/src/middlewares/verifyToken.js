@@ -12,10 +12,11 @@ const verifyToken = async (req, res, next) => {
             decode = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET)
         } catch (error) {
             if (error.name === "TokenExpiredError") {
-                return res.status(400).json({ success: false, message: "Token is expired" })
+                return res.status(401).json({ success: false, message: "Token is expired" })
             }
         }
         req.user = decode
+        req.userId = decode.id
         // console.log(req.user);
         next()
     } catch (error) {
