@@ -74,9 +74,10 @@ exports.resetPasswordSchema = yup.object({
     .oneOf([yup.ref("password")], "Passwords must match")
     .required("Confirm password is required"),
 
-    otp: yup
+  otp: yup
     .string()
     .trim()
     .min(6)
     .max(6)
+    .required("otp is required"),
 });

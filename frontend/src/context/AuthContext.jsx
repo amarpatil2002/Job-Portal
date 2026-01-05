@@ -69,10 +69,13 @@ const AuthContextProvider = ({ children }) => {
             const res = await api.post('/auth/login', credintial, {
                 headers: { 'Content-Type': 'application/json' },
             });
+            console.log(res);
+
             localStorage.setItem('accessToken', res.data.accessToken);
             setUser(res.data.user);
             return res.data;
         } catch (error) {
+            console.log(error);
             if (!error.response) {
                 throw new Error('Netwrok error');
             }
@@ -81,12 +84,36 @@ const AuthContextProvider = ({ children }) => {
         }
     };
 
-    const forgotPassword = (credential) => {
-        console.log(credential);
+    const forgotPassword = async (user) => {
+        try {
+            const res = await api.post('/auth/forgot-password', user, {
+                headers: { 'Content-Type': 'application/json' },
+            });
+            return res.data;
+        } catch (error) {
+            if (!error.response) {
+                throw new Error('Network Error');
+            }
+            throw new Error(error.response?.data?.message || 'Unable to send otp');
+        }
     };
 
-    const setNewPassword = (newData) => {
-        console.log(newData);
+    const setNewPassword = async (newCredentials) => {
+        console.log(newCredentials);
+        try {
+            const res = await api.post('/auth/reset-password', newCredentials, {
+                headers: { 'Content-Type': 'application/json' },
+            });
+            console.log(res);
+            return res.data;
+        } catch (error) {
+            console.log(error.response);
+            if (!error.response) {
+                throw new Error('Network error');
+            }
+
+            throw new Error(error.response?.data?.message || 'Unable to reset password');
+        }
     };
 
     const logout = async () => {

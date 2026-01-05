@@ -14,7 +14,7 @@ import CompanyDashboard from './Pages/Company/CompanyDashboard';
 import CandidateDashboard from './Pages/Candidate/CandidateDashboard';
 import PublicRoutes from './Pages/routes/PublicRoutes';
 import RoleRoute from './Pages/routes/RoleRoute';
-import ProtectedRoutes from './Pages/Routes/ProtectedRoutes';
+import ProtectedRoutes from './Pages/routes/ProtectedRoutes';
 
 function App() {
     const router = createBrowserRouter([

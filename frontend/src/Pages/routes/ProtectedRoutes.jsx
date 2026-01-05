@@ -6,7 +6,7 @@ function ProtectedRoutes() {
     const { user, loading } = useContext(AuthContext);
 
     // const token = localStorage.getItem('accessToken');
-    if (loading) return null;
+    if (loading) return;
     if (!user) {
         return <Navigate to="/login" replace />;
     }

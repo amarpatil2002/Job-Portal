@@ -139,10 +139,8 @@ function Login() {
 
                 {/* SUBMIT */}
                 <button
-                    disabled={loading}
-                    className={`w-full cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
-                        loading ? 'hover:bg-gray-300 cursor-not-allowed' : 'hover:bg-indigo-700'
-                    }`}
+                    disabled={loading || !formData.email || !formData.password}
+                    className="w-full cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                     {loading ? 'Logging' : 'Login'}
                 </button>

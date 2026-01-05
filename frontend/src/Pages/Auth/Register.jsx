@@ -213,12 +213,8 @@ function Register() {
 
                 {/* SUBMIT */}
                 <button
-                    disabled={loading}
-                    className={`w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer ${
-                        loading
-                            ? 'cursor-not-allowed pointer-events-none bg-indigo-300'
-                            : 'bg-indigo-600'
-                    }`}
+                    disabled={loading || !formData.email}
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                     {loading ? 'Registering...' : 'Register'}
                 </button>

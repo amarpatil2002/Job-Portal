@@ -6,23 +6,27 @@ import { toast } from 'react-toastify';
 import { useEffect } from 'react';
 import api from '../../api/axios';
 import { X } from 'lucide-react';
+import { object, string } from 'yup';
+
+const verifyUserSchema = object({
+    otp: string().required('OTP is required').trim().min(6, 'OTP should be 6 digit'),
+});
 
 function VerifyUser() {
+    const RESEND_TIME = 59;
     const [otp, setOTP] = useState('');
     const [loading, setLoading] = useState(false);
-    const RESEND_TIME = 59;
+    const [error, setError] = useState({});
     const [timer, setTimer] = useState(RESEND_TIME);
 
     const { verifyUser } = useContext(AuthContext);
 
     const navigate = useNavigate();
     const location = useLocation();
-    const { email } = location?.state || {};
-    // const email = 'amarjitpatil2002@gmail.com';
+    const { email } = location?.state;
 
     useEffect(() => {
         if (!email) {
-            console.log(email);
             navigate('/register');
         }
     }, [email, navigate]);
@@ -40,12 +44,8 @@ function VerifyUser() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!otp || otp.length !== 6) {
-            toast.error('Please entre a valid 6 digit OTP');
-            return;
-        }
-
         try {
+            await verifyUserSchema.validate({ otp }, { abortEarly: false });
             setLoading(true);
             const data = await verifyUser({ email, otp });
             if (data.success) {
@@ -53,7 +53,13 @@ function VerifyUser() {
                 navigate('/login');
             }
         } catch (error) {
-            toast.error(error.message);
+            if (error.name === 'ValidationError') {
+                const validationError = {};
+                error.inner.forEach((e) => (validationError[e.path] = e.message));
+                setError(validationError);
+            } else {
+                toast.error(error.message);
+            }
         } finally {
             setLoading(false);
         }
@@ -70,23 +76,26 @@ function VerifyUser() {
                     headers: { 'Content-Type': 'application/json' },
                 }
             );
-            console.log(res.data);
             if (res.data.success) {
-                // console.log(res.data);
                 toast.success(res.data.message);
                 setTimer(RESEND_TIME);
             }
         } catch (error) {
-            console.log(error.response.data);
             toast.error(error.response.data.message);
         }
     };
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-            <div className="w-full max-w-md bg-white shadow-xl rounded-2xl p-6">
-                <button onClick={() => navigate(-1)} className="mb-4">
-                    <X />
+            <div className="relative w-full max-w-md bg-white shadow-xl rounded-2xl p-6">
+                <button
+                    onClick={() => navigate(-1)}
+                    className="absolute top-4 right-4 p-2 rounded-full
+                             text-gray-600 hover:bg-gray-100 hover:text-indigo-600
+                             focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    aria-label="Close"
+                >
+                    <X className="w-5 h-5" />
                 </button>
 
                 <h2 className="text-2xl font-semibold text-center text-gray-900">
@@ -105,11 +114,16 @@ function VerifyUser() {
                             type="text"
                             value={otp}
                             maxLength={6}
-                            onChange={(e) => setOTP(e.target.value)}
+                            onChange={(e) => {
+                                setOTP(e.target.value);
+                                setError((prev) => ({ ...prev, otp: '' }));
+                            }}
                             placeholder="Enter 6-digit OTP"
                             className="w-full border rounded-lg px-4 py-2 text-center tracking-widest text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         />
                     </div>
+
+                    {error.otp && <p className="text-red-500 text-sm mt-1">{error.otp} </p>}
 
                     {/* RESEND */}
                     <div className="flex items-center justify-between text-sm">
@@ -132,11 +146,9 @@ function VerifyUser() {
 
                     {/* SUBMIT */}
                     <button
-                        disabled={loading}
+                        disabled={loading || !otp}
                         type="submit"
-                        className={` ${
-                            loading ? 'cursor-not-allowed text-gray-400' : 'bg-indigo-600'
-                        } cursor-pointer w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg font-medium transition focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+                        className="cursor-pointer w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg font-medium transition focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed "
                     >
                         {loading ? 'Verifying...' : 'Verify Email'}
                     </button>

@@ -177,7 +177,7 @@ exports.resendVerifyOTP = async (req, res) => {
         const pendingUser = await pendingUserModel.findOne({ email })
         // console.log(pendingUser);
         if (!pendingUser) {
-            return res.status(400).json({ success: false, message: "Please try after some time" })
+            return res.status(400).json({ success: false, message: "Session Expired , Please try after some time" })
         }
 
         if (pendingUser.resendCount > 2) {

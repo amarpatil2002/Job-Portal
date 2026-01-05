@@ -1,5 +1,13 @@
 import axios from 'axios';
 
+const PUBLIC_ROUTES = [
+    '/auth/login',
+    '/auth/register',
+    '/auth/verify-user',
+    '/auth/forgot-password',
+    '/auth/set-new-password',
+];
+
 const api = axios.create({
     baseURL: 'http://localhost:7000/api',
     withCredentials: true,
@@ -18,36 +26,50 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
-        console.log('INTERCEPTOR HIT', error.response?.status, error.config?.url);
+        // console.log('INTERCEPTOR HIT', error.response?.status, error.config?.url);
 
         const originalRequest = error.config;
 
-        // do not retry refresh endpoint
-        if (originalRequest.url.includes('/auth/refresh-token')) {
+        // Network error → just reject
+        if (!error.response) {
             return Promise.reject(error);
         }
 
-        // Access token expired
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        const status = error.response.status;
+        const url = originalRequest.url;
+
+        //  Do NOT refresh for public routes
+        if (PUBLIC_ROUTES.some((route) => url.includes(route))) {
+            return Promise.reject(error);
+        }
+
+        //  Do NOT retry refresh endpoint itself
+        if (url.includes('/auth/refresh-token')) {
+            return Promise.reject(error);
+        }
+
+        //  No access token → logout
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+            localStorage.removeItem('accessToken');
+            window.location.href = '/login';
+            return Promise.reject(error);
+        }
+
+        // Try refresh ONCE
+        if (status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;
 
             try {
-                const res = await axios.post(
-                    'http://localhost:7000/api/auth/refresh-token',
-                    {},
-                    { withCredentials: true }
-                );
+                const res = await api.post('/auth/refresh-token');
+
                 const newAccessToken = res.data.accessToken;
-                console.log(newAccessToken);
-                // store new token
                 localStorage.setItem('accessToken', newAccessToken);
 
-                // update header
                 originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-
                 return api(originalRequest);
             } catch (refreshError) {
-                // 🔥 REFRESH TOKEN FAILED → LOGOUT
+                // Refresh failed → force logout
                 localStorage.removeItem('accessToken');
                 window.location.href = '/login';
                 return Promise.reject(refreshError);
