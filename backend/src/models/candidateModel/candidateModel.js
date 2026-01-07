@@ -7,19 +7,19 @@ const candidateSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
-    profileDetails: {
+    profileId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Profile"
     },
-    candidatePersonalDetails: {
+    candidatePersonalDetailsId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "CandidatePersonalDetails"
     },
-    candidateEducationDetails: {
+    candidateEducationDetailsId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "CandidateEducationDetails"
     },
-    candidateWorkDetails: {
+    candidateWorkDetailsId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "CandidateWorkDetails"
     }
