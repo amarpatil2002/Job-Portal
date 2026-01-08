@@ -1,22 +1,30 @@
 const mongoose = require('mongoose')
 
 const candidatePersonalDetailsSchema = new mongoose.Schema({
-    name: { type: String },
-    address: { type: String },
-    city: { type: String },
-    state: { type: String },
-    contry: { type: String },
-    // email:{type:String},
-    contactNumber: { type: String },
-    gender: { type: String },
-    age: { type: String },
-    marriage: { type: String },
-    fathersName: { type: String },
-    mothersName: { type: String },
-    AddharNumber: { type: String },
-    PanNumber: { type: String },
-    disability: { type: Boolean },
-    disabilityName : {type:String}
+
+    basicInfo: {
+        name: { type: String, required: true },
+        gender: { type: String },
+        age: { type: Number },
+        marriage: { type: String }
+    },
+
+    contactInfo: {
+        contactNumber: { type: String },
+        address: { type: String },
+        city: { type: String },
+        state: { type: String },
+        country: { type: String }
+    },
+
+    identityInfo: {
+        fathersName: { type: String },
+        mothersName: { type: String },
+        aadharNumber: { type: String },
+        panNumber: { type: String },
+        disability: { type: Boolean },
+        disabilityName: { type: String }
+    }
 
 }, { timestamps: true })
 

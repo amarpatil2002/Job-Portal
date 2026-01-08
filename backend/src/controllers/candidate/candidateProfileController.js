@@ -98,13 +98,6 @@ const { default: mongoose } = require("mongoose")
 //     }
 // }
 
-// exports.getProfile = async (req, res) => {
-//     try {
-
-//     } catch (error) {
-//         return res.status(500).json({ success: false, message: "Internal server error" })
-//     }
-// }
 
 
 // Upload file on cloudinary using diskstorage
@@ -271,15 +264,28 @@ exports.getProfile = async (req, res) => {
     try {
         const userId = req.user.id
 
-        const candidate = await candidateModel.findOne({ userId }).populate("profileId")
+        // const candidate = await candidateModel.findOne({ userId }).populate("profileId")
+        // if (!candidate) {
+        //     return res.status(400).json({ success: false, message: "Candidate not found" })
+        // }
+        // const profile = candidate.profileId
+        // if (!profile) {
+        //     return res.status(400).json({ success: false, message: "Candidate profile not found" })
+        // }
+
+        // This is fine if profile data is always required.
+        // But for high-traffic APIs, better approach:
+
+        const candidate = await candidateModel.findOne({ userId })
         if (!candidate) {
             return res.status(400).json({ success: false, message: "Candidate not found" })
         }
-        const profile = candidate.profileId
+        const profile = await profileModel.findOne({ _id: candidate.profileId })
         if (!profile) {
             return res.status(400).json({ success: false, message: "Candidate profile not found" })
         }
 
+        return res.status(200).json({ success: true, message: "Profile details fetched", profile })
 
     } catch (error) {
         return res.status(500).json({ success: false, message: "Internal server error" })
