@@ -1,11 +1,17 @@
 const mongoose = require('mongoose')
 
 const profileSchema = new mongoose.Schema({
-    profileImage: {
-        type: String
-    },
     summary: {
         type: String
+    },
+    // just for local storage
+    // profileImage: {
+    //     type: String
+    // },
+
+    profileImage: {
+        imageURL: { type: String },
+        publicId: { type: String }
     }
 
 }, { timestamps: true })
