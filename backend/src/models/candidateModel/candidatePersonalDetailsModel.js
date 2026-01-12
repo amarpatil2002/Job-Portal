@@ -10,7 +10,7 @@ const candidatePersonalDetailsSchema = new mongoose.Schema({
             required: true
         },
         age: { type: Number },
-        marriage: { type: Boolean }
+        married: { type: Boolean }
     },
 
     contactInfo: {
@@ -22,8 +22,8 @@ const candidatePersonalDetailsSchema = new mongoose.Schema({
     },
 
     identityInfo: {
-        fathersName: { type: String },
-        mothersName: { type: String },
+        fatherName: { type: String },
+        motherName: { type: String },
         addharNumber: { type: String },
         panNumber: { type: String },
         disability: { type: Boolean },

@@ -1,12 +1,13 @@
 const express = require('express')
 const verifyToken = require('../../middlewares/verifyToken')
+const { uploadImage } = require('../../middlewares/multer/multer')
+const { multerErrorHandler } = require('../../middlewares/multer/multerErrorHandler')
+const { validate } = require('../../middlewares/validators')
 const {
     createProfile,
     updateProfile,
     deleteProfileImage,
     getProfile } = require('../../controllers/candidate/candidateProfileController')
-const { uploadImage } = require('../../middlewares/multer/multer')
-const { multerErrorHandler } = require('../../middlewares/multer/multerErrorHandler')
 const { createBasicInfo,
     getBasicInfo,
     updateBasicInfo,
@@ -14,9 +15,10 @@ const { createBasicInfo,
     updateContactInfo,
     getIdentityInfo,
     updateIdentityInfo } = require('../../controllers/candidate/candidatePersonalDetailsController')
-const { validate } = require('../../middlewares/validators')
-const { candidatebasicInfo, candidatContactInfo, candidatIdentityInfo, candidatebasicInfoupdate }
-    = require('../../validators/candidateValidators')
+const { candidatebasicInfo,
+    candidatContactInfo,
+    candidatIdentityInfo,
+    candidatebasicInfoupdate } = require('../../validators/candidateValidators')
 
 const router = express.Router()
 

@@ -1,3 +1,4 @@
+const { object } = require("yup")
 const candidateModel = require("../../models/candidateModel/candidateModel")
 const candidatePersonalDetailsModel = require("../../models/candidateModel/candidatePersonalDetailsModel")
 
@@ -172,7 +173,29 @@ exports.getContactInfo = async (req, res) => {
 
 exports.updateIdentityInfo = async (req, res) => {
     try {
+        const userId = req.user.id
+        const candidate = await candidateModel.findOne({ userId })
+        if (!candidate || !candidate.candidatePersonalDetailsId) {
+            return res.status(404).json({ success: false, message: "Personal details not found" })
+        }
 
+        const updatedFields = {}
+        for (let [field, value] of Object.entries(req.body)) {
+            if (value !== undefined) {
+                updatedFields[`identityInfo.${field}`] = value
+            }
+        }
+
+        if (!updatedFields) {
+            return res.status(400).json({ success: false, message: "Nothing to update" })
+        }
+
+        const personalDetails = await candidatePersonalDetailsModel.updateOne(
+            { _id: candidate.candidatePersonalDetailsId },
+            { $set: updatedFields }
+        )
+
+        return res.status(200).json({ success: true, message: "Identity details updated successfully", data: personalDetails.identityInfo })
     } catch (error) {
         res.status(500).json({ success: false, message: "Internal server error" })
     }
@@ -181,6 +204,20 @@ exports.updateIdentityInfo = async (req, res) => {
 
 exports.getIdentityInfo = async (req, res) => {
     try {
+        const userId = req.user.id
+
+        const candidate = await candidateModel.findOne({ userId })
+        if (!candidate || !candidate.candidatePersonalDetailsId) {
+            return res.status(404).json({ success: false, message: "Personal details not found" })
+        }
+
+        const personalDetails = await candidatePersonalDetailsModel.findById(candidate.candidatePersonalDetailsId).select("identityInfo").lean()
+
+        if (!personalDetails) {
+            return res.status(404).json({ success: false, message: "Identity details not found" })
+        }
+
+        return res.status(200).json({ success: true, message: "Identity details fetched successfully", data: personalDetails.identityInfo })
 
     } catch (error) {
         res.status(500).json({ success: false, message: "Internal server error" })
