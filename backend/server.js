@@ -3,7 +3,7 @@ const cookieParser = require('cookie-parser')
 const cors = require('cors')
 require('dotenv').config()
 require('./src/config/db')
-const candidateDetailsRouter = require("./src/routes/candidate/candidateDetailsRoute")
+const candidateDetailsRouter = require("./src/routes/candidate/candidateProfileDetailsRoute")
 const authRoute = require('./src/routes/authRoute')
 
 

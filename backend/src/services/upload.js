@@ -14,7 +14,6 @@ const uploadFileOnCloudinary = async (filePath, folder = "upload") => {
         fs.unlinkSync(filePath)
         return { publicId: result.public_id, imageURL: result.secure_url }
     } catch (error) {
-        console.log(error);
         if (filePath && fs.existsSync(filePath)) {
             fs.unlinkSync(filePath)
         }

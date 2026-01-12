@@ -8,7 +8,7 @@ const candidateWorkDetailsSchema = new mongoose.Schema({
     workExperience: {
         type: Number
     },
-    notice_period: {
+    noticePeriod: {
         type: String
     },
     resume: {

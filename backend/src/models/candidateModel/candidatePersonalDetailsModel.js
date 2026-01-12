@@ -4,9 +4,13 @@ const candidatePersonalDetailsSchema = new mongoose.Schema({
 
     basicInfo: {
         name: { type: String, required: true },
-        gender: { type: String },
+        gender: {
+            type: String,
+            enum: ["male", "female", "other"],
+            required: true
+        },
         age: { type: Number },
-        marriage: { type: String }
+        marriage: { type: Boolean }
     },
 
     contactInfo: {
@@ -20,7 +24,7 @@ const candidatePersonalDetailsSchema = new mongoose.Schema({
     identityInfo: {
         fathersName: { type: String },
         mothersName: { type: String },
-        aadharNumber: { type: String },
+        addharNumber: { type: String },
         panNumber: { type: String },
         disability: { type: Boolean },
         disabilityName: { type: String }
@@ -28,6 +32,6 @@ const candidatePersonalDetailsSchema = new mongoose.Schema({
 
 }, { timestamps: true })
 
-const candidatePersonalDetailsModel = mongoose.model("Compnay", candidatePersonalDetailsSchema)
+const candidatePersonalDetailsModel = mongoose.model("CandidatePersonalDetails", candidatePersonalDetailsSchema)
 
 module.exports = candidatePersonalDetailsModel
