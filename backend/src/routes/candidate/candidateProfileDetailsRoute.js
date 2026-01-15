@@ -1,7 +1,6 @@
 const express = require('express')
 const verifyToken = require('../../middlewares/verifyToken')
-const { uploadImage } = require('../../middlewares/multer/multer')
-const { multerErrorHandler } = require('../../middlewares/multer/multerErrorHandler')
+const { multerProfileImageHandler } = require('../../middlewares/multer/multerHandle')
 const { validate } = require('../../middlewares/validators')
 const {
     createProfile,
@@ -23,9 +22,9 @@ const {
 const router = express.Router()
 
 // profile routes for image & summary
-router.post('/create-profile', verifyToken, multerErrorHandler(uploadImage.single('profileImage')), createProfile)
+router.post('/create-profile', verifyToken, multerProfileImageHandler, createProfile)
 router.get('/get-profile', verifyToken, getProfile)
-router.put('/update-profile', verifyToken, multerErrorHandler(uploadImage.single('profileImage')), updateProfile)
+router.put('/update-profile', verifyToken, multerProfileImageHandler, updateProfile)
 router.delete('/delete-profile-image', verifyToken, deleteProfileImage)
 
 

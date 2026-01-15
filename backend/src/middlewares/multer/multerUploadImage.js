@@ -12,19 +12,18 @@ const storage = multer.diskStorage({
         return cb(null, fileDirectory)
     },
     filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname)
+        const name = path.basename(file.originalname, ext)
         const unique = Math.floor(1000 + Math.random() * 9000)
-        return cb(null, `${unique + Date.now()}`)
+        return cb(null, `${name}-${unique}${ext}`)
     }
 })
 
-const fileFilter = (req, file, cb) => {
+const imageFilter = (req, file, cb) => {
     const allowedType = ["image/jpeg", "image/png", "image/jpg"]
 
     if (!allowedType.includes(file.mimetype)) {
-        return cb(new multer.MulterError(
-            "LIMIT_UNEXPECTED_FILE",
-            "file"
-        ), false)
+        cb(new Error("Only image files allowed"), false)
     }
 
     cb(null, true)
@@ -33,5 +32,5 @@ const fileFilter = (req, file, cb) => {
 exports.uploadImage = multer({
     storage,
     limits: { fileSize: 5 * 1024 * 1024 },
-    fileFilter
+    fileFilter: imageFilter
 })

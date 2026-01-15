@@ -1,8 +1,9 @@
 const express = require('express')
-const { addEducation, updateEducation, getEducation, deleteEducation, getAllEducation, addCertificate } = require('../../controllers/candidate/candidateEducationController')
+const { addEducation, updateEducation, getEducation, deleteEducation, getAllEducation, updateCertificate, getCertificate } = require('../../controllers/candidate/candidateEducationController')
 const verifyToken = require('../../middlewares/verifyToken')
 const { validate } = require('../../middlewares/validators')
 const { candidateUpdateQualification, candidateAddQualification } = require('../../validators/candidate/candidateDetailsValidators')
+const { multerCandidateCertifiateHandler } = require('../../middlewares/multer/multerHandle')
 
 const router = express.Router()
 
@@ -12,10 +13,9 @@ router.delete('/education-details/qualification/:qualificationId', verifyToken, 
 router.get('/education-details/qualification/:qualificationId', verifyToken, getEducation)
 router.get('/education-details/qualification', verifyToken, getAllEducation)
 
-router.post('/education-details/certificate', verifyToken, addCertificate)
-router.patch('/education-details/certificate/:certificateId', verifyToken, addCertificate)
-router.delete('/education-details/certificate/:certificateId', verifyToken, addCertificate)
-router.get('/education-details/certificate', verifyToken, addCertificate)
+
+router.put('/education-details/certificate', verifyToken, multerCandidateCertifiateHandler, updateCertificate)
+router.get('/education-details/certificate', verifyToken, getCertificate)
 
 
 

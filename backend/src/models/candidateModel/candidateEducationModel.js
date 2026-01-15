@@ -2,10 +2,11 @@ const mongoose = require('mongoose')
 
 const candidateEducationDetailsSchema = new mongoose.Schema({
     highestEducation: { type: String },
-    certifates: [
+    certificates: [
         {
             certificateName: { type: String },
-            certificateFile: { type: String },
+            certificateFilePublicId: { type: String },
+            certificateFileUrl: { type: String },
         }
     ],
     qualifications: [
