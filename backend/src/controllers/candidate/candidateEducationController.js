@@ -48,11 +48,11 @@ exports.addEducation = async (req, res) => {
             { $push: { qualifications: qualificationData } }
         )
 
-        if (updatedEducation.matchedCount === 0) {
-            return res.status(404).json({ success: false, message: "Qualification not found" })
+        if (result.matchedCount === 0) {
+            return res.status(404).json({ success: false, message: "Qualification not created" })
         }
 
-        return res.status(201).json({ success: true, message: "Qualification created successfully", data: qualificationData })
+        return res.status(201).json({ success: true, message: "Qualification created successfully", result, data: qualificationData })
 
     } catch (error) {
         console.log(error);
@@ -91,10 +91,12 @@ exports.updateEducation = async (req, res) => {
             return res.status(400).json({ success: false, message: "Noting to update" })
         }
         const updatedEducation = await candidateEducationDetailsModel.updateOne(
-            { "qualifications._id": qualificationId },
+            {
+                "qualifications._id": qualificationId,
+                _id: educationDetailsId
+            },
             { $set: updatedFields }
         )
-
         if (updatedEducation.matchedCount === 0) {
             return res.status(404).json({ success: false, message: "Qualification not found" })
         }
@@ -121,15 +123,20 @@ exports.deleteEducation = async (req, res) => {
             return res.status(404).json({ success: false, message: "Candidate not found" })
         }
 
-        const educationDetailsdoc = candidate.candidateEducationDetailsId
-        if (!educationDetailsdoc) {
+        const candidateEducationDetailsId = candidate.candidateEducationDetailsId
+        if (!candidateEducationDetailsId) {
             return res.status(404).json({ success: false, message: "Education ID not found" })
         }
 
-        const deletedDoc = await candidateEducationDetailsModel.deleteOne({ "qualifications._id": qualificationId })
+        const deletedDoc = await candidateEducationDetailsModel.updateOne(
+            { _id: candidateEducationDetailsId },
+            {
+                $pull: { qualifications: { _id: qualificationId } }
+            }
+        )
 
         if (deletedDoc.deletedCount === 0) {
-            return res.status(404).json({ success: false, message: "Qualification not found" })
+            return res.status(404).json({ success: false, message: "No qualifications found" })
         }
 
         return res.status(200).json({ success: true, message: "Qualification deleted successfully", data: deletedDoc })
@@ -143,7 +150,72 @@ exports.deleteEducation = async (req, res) => {
 exports.getEducation = async (req, res) => {
     try {
 
+        const { qualificationId } = req.params
+        const userId = req.user.id
+
+        if (!qualificationId) {
+            return res.status(404).json({ success: false, message: "Qualification Id not found" })
+        }
+
+        const candidate = await candidateModel.findOne({ userId })
+        if (!candidate) {
+            return res.status(404).json({ success: false, message: "Candidate not found" })
+        }
+
+        const educationDetailsId = candidate.candidateEducationDetailsId
+        if (!educationDetailsId) {
+            return res.status(404).json({ success: false, message: "Education Id not found" })
+        }
+
+        const singleEducation = await candidateEducationDetailsModel.findOne(
+            { _id: educationDetailsId },
+            {
+                qualifications: { $elemMatch: { _id: qualificationId } }
+            }
+        )
+
+        // 2.
+        // const educationDetailDoc = await candidateEducationDetailsModel.findOne({ "qualifications._id": qualificationId }, { "qualifications.$": 1 })
+
+        if (singleEducation.qualifications.length === 0) {
+            return res.status(404).json({ success: false, message: "Qualification not found" })
+        }
+
+        return res.status(200).json({ success: true, message: "Qualification fetched successfully", data: singleEducation })
+
     } catch (error) {
+        return res.status(500).json({ success: false, message: "Internal server error" })
+    }
+}
+
+exports.getAllEducation = async (req, res) => {
+    try {
+
+        const userId = req.user.id
+
+        const candidate = await candidateModel.findOne({ userId })
+        if (!candidate) {
+            return res.status(404).json({ success: false, message: "Candidate not found" })
+        }
+
+        const educationDetailsId = candidate.candidateEducationDetailsId
+        if (!educationDetailsId) {
+            return res.status(404).json({ success: false, message: "Education Id not found" })
+        }
+
+        const getAllEducations = await candidateEducationDetailsModel.findOne(
+            { _id: educationDetailsId },
+            { qualifications: 1 }
+        )
+
+        if (getAllEducations.qualifications.length === 0) {
+            return res.status(404).json({ success: false, message: "No qualifications found" })
+        }
+
+        return res.status(200).json({ success: true, message: "Qualification fetched successfully", data: getAllEducations })
+
+    } catch (error) {
+        console.log(error);
         return res.status(500).json({ success: false, message: "Internal server error" })
     }
 }
@@ -152,8 +224,51 @@ exports.getEducation = async (req, res) => {
 
 exports.addCertificate = async (req, res) => {
     try {
+        const userId = req.user.id
+        const { highestEducation } = req.body
+        if (!highestEducation) {
+            return res.status(400).json({ success: false, message: "Highest education required" })
+        }
+
+        const candidate = await candidateModel.findOne({ userId })
+        if (!candidate) {
+            return res.status(404).json({ success: false, message: "Candidate not found" })
+        }
+
+        const educationDetailId = candidate.candidateEducationDetailsId
+        if (!educationDetailId) {
+            const newEducationDetails = await candidateEducationDetailsModel.create(
+                {
+                    certifates: []
+                }
+            )
+
+            await candidateModel.updateOne({ _id: candidate._id }, { candidateEducationDetailsId: newEducationDetails._id })
+
+            educationDetailId = newEducationDetails._id
+        }
+
+        let certificates = {
+            certificateName: req.file,
+            certificateFile: req?.file?.path
+        }
+        console.log(certificates);
+
+        const updatedEducationData = await candidateEducationDetailsModel.updateOne(
+            { _id: educationDetailId },
+            {
+                $set: {
+                    highestEducation: highestEducation,
+                    certifates: certificates
+                }
+            }
+        )
+
+        console.log(updatedEducationData);
+        return res.status(201).json({ success: true, message: "Certificate & Highest qulification created successfully", data: updatedEducationData })
 
     } catch (error) {
+        console.log(error);
         return res.status(500).json({ success: false, message: "Internal server error" })
     }
 }

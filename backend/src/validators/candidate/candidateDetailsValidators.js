@@ -103,29 +103,21 @@ exports.candidateAddQualification = yup.object({
 
 exports.candidateUpdateQualification = yup.object({
     collegeName: yup.string().trim().notRequired(),
-
     degree: yup.string().trim().notRequired(),
-
     fieldStudy: yup.string().trim().notRequired(),
-
     startYear: yup
         .number()
-        .nullable()
         .transform((value, originalValue) => {
             if (originalValue === "" || originalValue === null) return null;
             return Number(originalValue);
         })
-        .typeError("Start year must be a number")
         .notRequired(),
-
     endYear: yup
         .number()
-        .nullable()
         .transform((value, originalValue) => {
             if (originalValue === "" || originalValue === null) return null;
             return Number(originalValue);
         })
-        .typeError("End year must be a number")
         .notRequired()
         .when("startYear", {
             is: (startYear) => startYear !== null && startYear !== undefined,
