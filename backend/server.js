@@ -3,9 +3,9 @@ const cookieParser = require('cookie-parser')
 const cors = require('cors')
 require('dotenv').config()
 require('./src/config/db')
-const candidateDetailsRouter = require("./src/routes/candidate/candidateProfileDetailsRoute")
 const authRoute = require('./src/routes/authRoute')
-
+const candidateDetailsRouter = require("./src/routes/candidate/candidateProfileDetailsRoute")
+const candidateEducationRouter = require('./src/routes/candidate/candidateEducationDetialsRoute')
 
 const app = express()
 const port = process.env.PORT || 7001
@@ -20,6 +20,7 @@ app.use(cookieParser())                         //used for reads cookie
 
 app.use('/api', authRoute)
 app.use('/api', candidateDetailsRouter)
+app.use('/api', candidateEducationRouter)
 
 
 app.listen(port, () => {

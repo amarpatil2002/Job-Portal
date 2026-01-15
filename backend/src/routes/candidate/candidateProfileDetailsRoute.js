@@ -8,17 +8,17 @@ const {
     updateProfile,
     deleteProfileImage,
     getProfile } = require('../../controllers/candidate/candidateProfileController')
-const { createBasicInfo,
+const {
     getBasicInfo,
     updateBasicInfo,
     getContactInfo,
     updateContactInfo,
     getIdentityInfo,
     updateIdentityInfo } = require('../../controllers/candidate/candidatePersonalDetailsController')
-const { candidatebasicInfo,
+const {
     candidatContactInfo,
     candidatIdentityInfo,
-    candidatebasicInfoupdate } = require('../../validators/candidateValidators')
+    candidatebasicInfoupdate } = require('../../validators/candidate/candidateDetailsValidators')
 
 const router = express.Router()
 
@@ -30,17 +30,16 @@ router.delete('/delete-profile-image', verifyToken, deleteProfileImage)
 
 
 // BASIC INFO
-router.post('/personal-details/basic', validate(candidatebasicInfo), verifyToken, createBasicInfo)
 router.get('/personal-details/basic', verifyToken, getBasicInfo)
-router.patch('/personal-details/basic', validate(candidatebasicInfoupdate), verifyToken, updateBasicInfo)
+router.patch('/personal-details/basic', verifyToken, validate(candidatebasicInfoupdate), updateBasicInfo)
 
 // CONTACT INFO
 router.get('/personal-details/contact', verifyToken, getContactInfo)
-router.patch('/personal-details/contact', validate(candidatContactInfo), verifyToken, updateContactInfo)
+router.patch('/personal-details/contact', verifyToken, validate(candidatContactInfo), updateContactInfo)
 
 // IDENTITY INFO (Sensitive)
 router.get('/personal-details/identity', verifyToken, getIdentityInfo)
-router.patch('/personal-details/identity', validate(candidatIdentityInfo), verifyToken, updateIdentityInfo)
+router.patch('/personal-details/identity', verifyToken, validate(candidatIdentityInfo), updateIdentityInfo)
 
 
 module.exports = router

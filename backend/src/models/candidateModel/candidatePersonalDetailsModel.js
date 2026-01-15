@@ -3,11 +3,10 @@ const mongoose = require('mongoose')
 const candidatePersonalDetailsSchema = new mongoose.Schema({
 
     basicInfo: {
-        name: { type: String, required: true },
+        name: { type: String },
         gender: {
             type: String,
-            enum: ["male", "female", "other"],
-            required: true
+            enum: ["male", "female", "other"]
         },
         age: { type: Number },
         married: { type: Boolean }

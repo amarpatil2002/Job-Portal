@@ -4,49 +4,49 @@ const candidatePersonalDetailsModel = require("../../models/candidateModel/candi
 
 
 // BASIC INFO
-exports.createBasicInfo = async (req, res) => {
-    try {
-        const { name, age, gender, married } = req.body
-        const userId = req.user.id
+// exports.createBasicInfo = async (req, res) => {
+//     try {
+//         const { name, age, gender, married } = req.body
+//         const userId = req.user.id
 
-        if (!name || !gender || age === undefined || married === undefined) {
-            return res.status(400).json({ success: false, message: "All fiedls are required" })
-        }
+//         if (!name || !gender || age === undefined || married === undefined) {
+//             return res.status(400).json({ success: false, message: "All fiedls are required" })
+//         }
 
-        const candidate = await candidateModel.findOne({ userId }).lean()
-        if (!candidate) {
-            return res.status(404).json({ success: false, message: "Candidate not found" })
-        }
+//         const candidate = await candidateModel.findOne({ userId }).lean()
+//         if (!candidate) {
+//             return res.status(404).json({ success: false, message: "Candidate not found" })
+//         }
 
-        if (candidate.candidatePersonalDetailsId) {
-            return res.status(409).json({ success: false, message: "Personal details already exist" })
-        }
+//         if (candidate.candidatePersonalDetailsId) {
+//             return res.status(409).json({ success: false, message: "Personal details already exist" })
+//         }
 
-        const personalDetails = await candidatePersonalDetailsModel.create({
-            basicInfo: {
-                name,
-                age,
-                gender,
-                married
-            }
-        })
+//         const personalDetails = await candidatePersonalDetailsModel.create({
+//             basicInfo: {
+//                 name,
+//                 age,
+//                 gender,
+//                 married
+//             }
+//         })
 
-        await candidateModel.updateOne({ _id: candidate._id }, { $set: { candidatePersonalDetailsId: personalDetails._id } })
+//         await candidateModel.updateOne({ _id: candidate._id }, { $set: { candidatePersonalDetailsId: personalDetails._id } })
 
-        return res.status(201).json({ success: true, message: "Basic details created successfully", basicInfo })
+//         return res.status(201).json({ success: true, message: "Basic details created successfully", basicInfo })
 
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({ success: false, message: "Internal server error" })
-    }
-}
+//     } catch (error) {
+//         console.log(error);
+//         res.status(500).json({ success: false, message: "Internal server error" })
+//     }
+// }
 
 exports.updateBasicInfo = async (req, res) => {
     try {
         // const { name, age, married, gender } = req.body
         const userId = req.user.id
 
-        // This code completely update/override the entire document even one field is changed
+        // This code completely update/overwrite the entire document even one field is changed
         // if (!name || !gender || age === undefined || married === undefined) {
         //     return res.status(400).json({ success: false, message: "All fiedls are required" })
         // }
@@ -55,9 +55,13 @@ exports.updateBasicInfo = async (req, res) => {
         if (!candidate) {
             return res.status(404).json({ success: false, message: "Candidate not found" })
         }
-        const personalDetailsId = candidate.candidatePersonalDetailsId
+        let personalDetailsId = candidate.candidatePersonalDetailsId
         if (!personalDetailsId) {
-            return res.status(404).json({ success: false, message: "Personal details not found" })
+            const basicDetails = await candidatePersonalDetailsModel.create({ basicInfo: {} })
+
+            await candidateModel.updateOne({ _id: candidate._id }, { $set: { candidatePersonalDetailsId: basicDetails._id } })
+
+            personalDetailsId = basicDetails._id
         }
 
         //
@@ -115,8 +119,21 @@ exports.updateContactInfo = async (req, res) => {
     try {
         const userId = req.user.id
         const candidate = await candidateModel.findOne({ userId })
-        if (!candidate || !candidate.candidatePersonalDetailsId) {
-            return res.status(404).json({ success: false, message: "Personal details not found" })
+        if (!candidate) {
+            return res.status(404).json({ success: false, message: "Candidate not found" })
+        }
+
+        let candidatePersonalDetailsId = candidate.candidatePersonalDetailsId
+        if (!candidatePersonalDetailsId) {
+            const contactDetails = await candidatePersonalDetailsModel.create(
+                {
+                    contactInfo: {}
+                }
+            )
+
+            await candidateModel.updateOne({ _id: candidate._id }, { $set: { candidatePersonalDetailsId: contactDetails._id } })
+
+            candidatePersonalDetailsId = contactDetails._id
         }
 
         const updatedFields = {}
@@ -141,6 +158,7 @@ exports.updateContactInfo = async (req, res) => {
         return res.status(200).json({ success: true, message: "Basic details updated successfully", data: updatedFields })
 
     } catch (error) {
+        console.log(error);
         res.status(500).json({ success: false, message: "Internal server error" })
     }
 }
@@ -175,8 +193,18 @@ exports.updateIdentityInfo = async (req, res) => {
     try {
         const userId = req.user.id
         const candidate = await candidateModel.findOne({ userId })
-        if (!candidate || !candidate.candidatePersonalDetailsId) {
-            return res.status(404).json({ success: false, message: "Personal details not found" })
+        if (!candidate) {
+            return res.status(404).json({ success: false, message: "Candidate not found" })
+        }
+
+        let candidatePersonalDetailsId = candidate.candidatePersonalDetailsId
+
+        if (!candidatePersonalDetailsId) {
+            const identityDetails = await candidatePersonalDetailsModel.create({ identityInfo: {} })
+
+            await candidateModel.updateOne({ _id: candidate._id }, { $set: { candidatePersonalDetailsId: identityDetails._ids } })
+
+            candidatePersonalDetailsId = identityDetails._id
         }
 
         const updatedFields = {}

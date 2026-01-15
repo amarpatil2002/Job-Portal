@@ -1,14 +1,14 @@
 const mongoose = require('mongoose')
 
 const candidateEducationDetailsSchema = new mongoose.Schema({
-    highestEducation:{type:String},
-    certifates:[
+    highestEducation: { type: String },
+    certifates: [
         {
-            certificateName:{type:String},
-            certificateFile:{type:String},
+            certificateName: { type: String },
+            certificateFile: { type: String },
         }
     ],
-    education: [
+    qualifications: [
         {
             collegeName: {
                 type: String
@@ -19,11 +19,11 @@ const candidateEducationDetailsSchema = new mongoose.Schema({
             fieldStudy: {
                 type: String
             },
-            startDate: {
-                type: Date
+            startYear: {
+                type: String
             },
-            endDate: {
-                type: Date
+            endYear: {
+                type: String
             },
             grade: {
                 type: String
