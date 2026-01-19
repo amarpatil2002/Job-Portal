@@ -37,11 +37,21 @@ function CandidateProfileDetails() {
             </div>
 
             {/* Content */}
-            <div className="mt-6 bg-white p-6 rounded-xl shadow">
+            <div
+                className="
+                    mt-4 sm:mt-6
+                  bg-white
+                    p-4 sm:p-6
+                    rounded-xl
+                    shadow-sm
+                    min-h-[60vh]
+                    overflow-x-hidden
+                    "
+            >
                 {active === 'personal' && <MyDetails />}
                 {active === 'education' && <EducationInfo />}
                 {active === 'experience' && <ExperienceInfo />}
-                {active === 'resume' && <EducationInfo />}
+                {active === 'resume' && <ResumeInfo />}
             </div>
         </div>
     );

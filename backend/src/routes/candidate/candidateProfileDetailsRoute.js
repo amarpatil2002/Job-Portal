@@ -22,7 +22,7 @@ const {
 const router = express.Router()
 
 // profile routes for image & summary
-router.post('/create-profile', verifyToken, multerProfileImageHandler, createProfile)
+// router.post('/create-profile', verifyToken, multerProfileImageHandler, createProfile)
 router.get('/get-profile', verifyToken, getProfile)
 router.put('/update-profile', verifyToken, multerProfileImageHandler, updateProfile)
 router.delete('/delete-profile-image', verifyToken, deleteProfileImage)

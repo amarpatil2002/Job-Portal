@@ -69,7 +69,6 @@ const AuthContextProvider = ({ children }) => {
             const res = await api.post('/auth/login', credintial, {
                 headers: { 'Content-Type': 'application/json' },
             });
-            console.log(res);
 
             localStorage.setItem('accessToken', res.data.accessToken);
             setUser(res.data.user);

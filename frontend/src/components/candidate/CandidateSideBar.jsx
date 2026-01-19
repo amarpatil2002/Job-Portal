@@ -1,44 +1,75 @@
 import { useContext, useState } from 'react';
 import { AuthContext } from '../../context/AuthContext';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Bell, ChevronDown } from 'lucide-react';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Bell, ChevronDown, Menu, X } from 'lucide-react';
 import images from '../../assets/allImages';
+import { toast } from 'react-toastify';
 
 function CandidateSideBar() {
-    const [loading, setLoading] = useState(false);
-    const [open, setOpen] = useState(false);
+    const [open, setOpen] = useState(false); // profile dropdown
+    const [mobileOpen, setMobileOpen] = useState(false); // sidebar drawer
 
     const { user, logout } = useContext(AuthContext);
     const navigate = useNavigate();
 
     const handleLogout = async () => {
-        setLoading(true);
         await logout();
         toast.success('Logged out successfully');
-        setLoading(false);
         navigate('/login');
     };
 
     return (
         <div className="flex min-h-screen bg-gray-100">
-            {/* Sidebar */}
-            <aside className="w-72 bg-indigo-700 text-white flex flex-col p-5">
+            {/* ================= MOBILE HEADER ================= */}
+            <header className="md:hidden fixed top-0 left-0 right-0 z-40 bg-indigo-700 text-white flex items-center justify-between px-4 py-3">
+                <button onClick={() => setMobileOpen(true)}>
+                    <Menu className="w-6 h-6" />
+                </button>
+
+                <img src={images.jobPortalLogo} alt="Logo" className="h-8 object-contain" />
+
+                <Bell className="w-5 h-5" />
+            </header>
+
+            {/* ================= OVERLAY ================= */}
+            {mobileOpen && (
+                <div
+                    className="fixed inset-0 bg-black/40 z-40 md:hidden"
+                    onClick={() => setMobileOpen(false)}
+                />
+            )}
+
+            {/* ================= SIDEBAR ================= */}
+            <aside
+                className={`
+    fixed top-0 left-0 z-50
+    w-72 bg-indigo-700 text-white flex flex-col p-5
+    h-screen
+    transform transition-transform duration-300
+    ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
+    md:translate-x-0
+  `}
+            >
+                {/* Close button (mobile) */}
+                <div className="md:hidden flex justify-end mb-4">
+                    <button onClick={() => setMobileOpen(false)}>
+                        <X className="w-6 h-6" />
+                    </button>
+                </div>
                 {/* Logo */}
-                <div className="flex flex-col items-center my-7">
+                <div className="flex flex-col items-center my-5">
                     <img
                         src={images.jobPortalLogo}
                         alt="Job Portal Logo"
-                        className="h-16 w-auto object-contain"
+                        className="h-14 w-auto object-contain"
                     />
                     <span className="text-xs text-indigo-200 mt-1">Your Next Job Starts Here</span>
                 </div>
-
-                {/* Role + Notification */}
+                {/* Role */}
                 <div className="flex items-center justify-between mb-6 px-1">
-                    <h2 className="text-sm font-semibold uppercase tracking-wide">{user.role}</h2>
+                    <h2 className="text-sm font-semibold uppercase">{user.role}</h2>
                     <Bell className="w-5 h-5 cursor-pointer hover:text-indigo-200" />
                 </div>
-
                 {/* Profile Dropdown */}
                 <div className="relative mb-6">
                     <button
@@ -55,6 +86,7 @@ function CandidateSideBar() {
                                 onClick={() => {
                                     navigate('profile-details');
                                     setOpen(false);
+                                    setMobileOpen(false);
                                 }}
                                 className="w-full px-4 py-2 text-sm text-left hover:bg-gray-100"
                             >
@@ -70,20 +102,39 @@ function CandidateSideBar() {
                         </div>
                     )}
                 </div>
-
                 {/* Navigation */}
                 <nav className="flex-1 space-y-2">
-                    <SidebarLink to="" label="Dashboard" />
-                    <SidebarLink to="search-jobs" label="Search Job" />
-                    <SidebarLink to="applications" label="Applied Job" />
-                    <SidebarLink to="subscription" label="Subscription Plan" />
-                    <SidebarLink to="transactions" label="Transaction" />
-                    <SidebarLink to="support" label="Support" />
+                    <SidebarLink to="" label="Dashboard" onClick={() => setMobileOpen(false)} />
+                    <SidebarLink
+                        to="search-jobs"
+                        label="Search Job"
+                        onClick={() => setMobileOpen(false)}
+                    />
+                    <SidebarLink
+                        to="applications"
+                        label="Applied Job"
+                        onClick={() => setMobileOpen(false)}
+                    />
+                    <SidebarLink
+                        to="subscription"
+                        label="Subscription Plan"
+                        onClick={() => setMobileOpen(false)}
+                    />
+                    <SidebarLink
+                        to="transactions"
+                        label="Transaction"
+                        onClick={() => setMobileOpen(false)}
+                    />
+                    <SidebarLink
+                        to="support"
+                        label="Support"
+                        onClick={() => setMobileOpen(false)}
+                    />
                 </nav>
             </aside>
 
-            {/* Main Content */}
-            <main className="flex-1 p-6 overflow-y-auto">
+            {/* ================= MAIN ================= */}
+            <main className="flex-1 p-4 sm:p-6 mt-14 md:mt-0 md:ml-72 overflow-y-auto">
                 <Outlet />
             </main>
         </div>
@@ -92,10 +143,11 @@ function CandidateSideBar() {
 
 export default CandidateSideBar;
 
-const SidebarLink = ({ to, label }) => (
+const SidebarLink = ({ to, label, onClick }) => (
     <NavLink
         to={to}
         end={to === ''}
+        onClick={onClick}
         className={({ isActive }) =>
             `
       flex items-center px-4 py-2 rounded-lg text-sm font-medium transition
@@ -104,7 +156,7 @@ const SidebarLink = ({ to, label }) => (
               ? 'bg-indigo-900 text-white'
               : 'text-indigo-100 hover:bg-indigo-600 hover:text-white'
       }
-      `
+    `
         }
     >
         {label}

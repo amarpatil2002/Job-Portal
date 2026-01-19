@@ -103,66 +103,66 @@ const { default: mongoose } = require("mongoose")
 // Upload file on cloudinary using diskstorage
 
 
-exports.createProfile = async (req, res) => {
-    const session = await mongoose.startSession()
-    let uploadProfileImage
+// exports.createProfile = async (req, res) => {
+//     const session = await mongoose.startSession()
+//     let uploadProfileImage
 
-    try {
-        session.startTransaction()
+//     try {
+//         session.startTransaction()
 
-        const userId = req.user.id
-        const { summary } = req.body
-        const candidate = await candidateModel.findOne({ userId }).session(session)
-        if (!candidate) {
-            // return res.status(400).json({ success: false, message: "Candidate not found" })
-            throw new Error("Candidate not found")
-        }
+//         const userId = req.user.id
+//         const { summary } = req.body
+//         const candidate = await candidateModel.findOne({ userId }).session(session)
+//         if (!candidate) {
+//             // return res.status(400).json({ success: false, message: "Candidate not found" })
+//             throw new Error("Candidate not found")
+//         }
 
-        const profileId = candidate.profileId
-        if (profileId) {
-            // return res.status(400).json({ success: false, message: "Candidate profile already created" })
-            throw new Error("Candidate profile already created")
-        }
+//         const profileId = candidate.profileId
+//         if (profileId) {
+//             // return res.status(400).json({ success: false, message: "Candidate profile already created" })
+//             throw new Error("Candidate profile already created")
+//         }
 
-        if (req.file) {
-            uploadProfileImage = await uploadFileOnCloudinary(req.file.path, "profile-images")
-        }
+//         if (req.file) {
+//             uploadProfileImage = await uploadFileOnCloudinary(req.file.path, "profile-images")
+//         }
 
-        const profile = await profileModel.create(
-            [{
-                summary: summary || null,
-                profileImage: uploadProfileImage ? {
-                    imageURL: uploadProfileImage.imageURL,
-                    publicId: uploadProfileImage.publicId
-                } : null
-            }],
-            { session }
-        )
+//         const profile = await profileModel.create(
+//             [{
+//                 summary: summary || null,
+//                 profileImage: uploadProfileImage ? {
+//                     imageURL: uploadProfileImage.imageURL,
+//                     publicId: uploadProfileImage.publicId
+//                 } : null
+//             }],
+//             { session }
+//         )
 
-        candidate.profileId = profile[0]._id
-        await candidate.save({ session })
+//         candidate.profileId = profile[0]._id
+//         await candidate.save({ session })
 
-        await session.commitTransaction()
+//         await session.commitTransaction()
 
-        return res.status(201).json({
-            success: true,
-            message: "Profile created successfully",
-            profile
-        });
-    } catch (error) {
-        // Rollback DB upload
-        await session.abortTransaction()
+//         return res.status(201).json({
+//             success: true,
+//             message: "Profile created successfully",
+//             profile
+//         });
+//     } catch (error) {
+//         // Rollback DB upload
+//         await session.abortTransaction()
 
-        // Rollback cloudinary upload if DB failed
-        if (uploadProfileImage?.publicId) {
-            await cloudinary.uploader.destroy(uploadProfileImage.publicId)
-        }
+//         // Rollback cloudinary upload if DB failed
+//         if (uploadProfileImage?.publicId) {
+//             await cloudinary.uploader.destroy(uploadProfileImage.publicId)
+//         }
 
-        return res.status(500).json({ success: false, message: "Internal server error" })
-    } finally {
-        session.endSession()
-    }
-}
+//         return res.status(500).json({ success: false, message: "Internal server error" })
+//     } finally {
+//         session.endSession()
+//     }
+// }
 
 exports.updateProfile = async (req, res) => {
     const session = await mongoose.startSession()
@@ -178,10 +178,13 @@ exports.updateProfile = async (req, res) => {
             // return res.status(400).json({ success: false, message: "Candidate not found" })
             throw new Error("Candidate not found")
         }
-        const profile = candidate.profileId
+        let profile = candidate.profileId
         if (!profile) {
-            // return res.status(400).json({ success: false, message: "Candidate profile found" })
-            throw new Error("Candidate profile not found")
+            const createProfile = await profileModel.create([{ summary, profileImage: {} }, { session }])
+
+            await candidateModel.updateOne({ _id: candidate._id }, { profileId: createProfile[0]._id }, { session })
+
+            profile = createProfile[0]._id
         }
 
         const oldImagePublicId = profile.profileImage?.publicId || null
@@ -189,27 +192,34 @@ exports.updateProfile = async (req, res) => {
             newUploadImage = await uploadFileOnCloudinary(req.file?.path, "profile-images")
         }
 
+        const updatePayload = {}
+        console.log(summary);
         if (summary !== undefined) {
-            profile.summary = summary
+            updatePayload.summary = summary
         }
         if (newUploadImage) {
-            profile.profileImage = {
+            updatePayload.profileImage = {
                 imageURL: newUploadImage.imageURL,
                 publicId: newUploadImage.publicId
             }
         }
 
-        await profile.save({ session })
+
+        await profileModel.updateOne(
+            { _id: profile },
+            { $set: updatePayload },
+            { session }
+        )
         await session.commitTransaction()
 
         if (newUploadImage && oldImagePublicId) {
             await cloudinary.uploader.destroy(oldImagePublicId)
         }
 
-        return res.status(200).json({ success: true, message: "Profile Updated Successfully", profile })
+        return res.status(200).json({ success: true, message: "Profile Updated Successfully", updatePayload })
 
     } catch (error) {
-
+        console.log(error);
         await session.abortTransaction()
 
         if (newUploadImage?.publicId) {
