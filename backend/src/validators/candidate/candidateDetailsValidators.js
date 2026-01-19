@@ -15,8 +15,8 @@ exports.candidatebasicInfoupdate = yup.object({
         .trim()
         .oneOf(["male", "female", "other"], "Invalid gender selected"),
 
-    marriage: yup
-        .boolean(),
+    married: yup
+        .string(),
 });
 
 exports.candidatContactInfo = yup.object({

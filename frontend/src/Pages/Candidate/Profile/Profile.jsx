@@ -31,7 +31,11 @@ function Profile() {
                 {/* LEFT */}
                 <div className="flex flex-col items-center w-full sm:w-36 shrink-0 text-center">
                     <img
-                        src={profile?.profileImage?.imageURL || DEFAULT_IMAGE}
+                        src={
+                            profile?.profileImage?.imageURL.trim()
+                                ? profile?.profileImage?.imageURL
+                                : DEFAULT_IMAGE
+                        }
                         alt="Profile"
                         className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border"
                     />
@@ -73,8 +77,12 @@ const ProfileModal = ({ onClose }) => {
 
     useEffect(() => {
         if (profile) {
-            setSummary(profile.summary || '');
-            setPreview(profile.profileImage?.imageURL || DEFAULT_IMAGE);
+            setSummary(profile.summary || null);
+            setPreview(
+                profile?.profileImage?.imageURL?.trim()
+                    ? profile.profileImage?.imageURL
+                    : DEFAULT_IMAGE
+            );
         }
     }, [profile]);
 
@@ -129,7 +137,7 @@ const ProfileModal = ({ onClose }) => {
                 <div className="flex justify-center mb-5">
                     <div className="relative">
                         <img
-                            src={preview ? preview : DEFAULT_IMAGE}
+                            src={preview.trim() ? preview : DEFAULT_IMAGE}
                             alt="Profile"
                             className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border"
                         />

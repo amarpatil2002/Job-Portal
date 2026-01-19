@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const { string } = require('yup')
 
 const candidatePersonalDetailsSchema = new mongoose.Schema({
 
@@ -9,7 +10,7 @@ const candidatePersonalDetailsSchema = new mongoose.Schema({
             enum: ["male", "female", "other"]
         },
         age: { type: Number },
-        married: { type: Boolean }
+        married: { type: String }
     },
 
     contactInfo: {

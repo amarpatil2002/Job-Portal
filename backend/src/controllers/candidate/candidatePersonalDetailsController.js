@@ -71,7 +71,7 @@ exports.updateBasicInfo = async (req, res) => {
                 updatedFields[`basicInfo.${field}`] = value
             }
         }
-
+        console.log(req.body);
         if (!Object.keys(updatedFields).length) {
             return res.status(400).json({ success: false, message: "Nothing to update" });
         }
