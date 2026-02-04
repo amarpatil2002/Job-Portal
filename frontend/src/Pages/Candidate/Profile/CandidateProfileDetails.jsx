@@ -8,7 +8,7 @@ function CandidateProfileDetails() {
     const [active, setActive] = useState('personal');
 
     return (
-        <div className="bg-gray-100 p-6 rounded-xl">
+        <div className="bg-gray-100 p-6 rounded-none">
             {/* Header */}
             <Profile />
 

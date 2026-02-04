@@ -74,10 +74,36 @@ const CandidateProfileProvider = ({ children }) => {
             const res = await api.patch('/personal-details/basic', basicInfoData, {
                 headers: { 'Content-Type': 'application/json' },
             });
-            setPersonalDetails((prev) => ({ ...prev, basicInfo: res.data.data }));
+            await getPersonalDetails();
             return res.data;
         } catch (error) {
             throw new Error(error.response.data.message);
+        }
+    };
+
+    const updateContactDetails = async (contactInfoData) => {
+        try {
+            const res = await api.patch('/personal-details/contact', contactInfoData, {
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            await getPersonalDetails();
+            return res.data;
+        } catch (error) {
+            throw new Error(error.response?.data?.message);
+        }
+    };
+
+    const updateIdentityDetails = async (identityInfoData) => {
+        try {
+            const res = await api.patch('/personal-details/identity', identityInfoData, {
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            await getPersonalDetails();
+            return res.data;
+        } catch (error) {
+            throw new Error(error.response?.data?.message);
         }
     };
 
@@ -91,6 +117,8 @@ const CandidateProfileProvider = ({ children }) => {
                 setPersonalDetails,
                 setEducationDetails,
                 updateBasicDetails,
+                updateContactDetails,
+                updateIdentityDetails,
             }}
         >
             {children}

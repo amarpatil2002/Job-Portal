@@ -2,18 +2,26 @@ import { useContext, useEffect, useState } from 'react';
 import { number, object, string } from 'yup';
 import { CandidateProfileContext } from '../../context/CandidateProfileContext';
 import { toast } from 'react-toastify';
+import { Pencil, X } from 'lucide-react';
+import {} from '../../../src/css/uiClasses';
+import {
+    INPUT_CLASS,
+    SELECT_CLASS,
+    READ_BOX_CLASS,
+    LABEL_CLASS,
+    HEADER_CLASS,
+    ACTION_PRIMARY,
+    ACTION_SECONDARY,
+} from '../../../src/css/uiClasses';
 
 const basicInfoSchema = object({
     name: string().trim().required('Please enter name'),
-    age: number().required('Please enter age'),
-    gender: string()
-        .trim()
-        .required('Please select gender')
-        .oneOf(['male', 'female', 'other'], 'Invalid gender selected'),
-    married: string()
-        .trim()
-        .required('Please select marriage status')
-        .oneOf(['married', 'unmarried'], 'Invalid marriage status selected'),
+    age: number()
+        .transform((value, originalValue) => (originalValue === '' ? null : value))
+        .nullable()
+        .notRequired(),
+    gender: string().required('Please select gender'),
+    married: string().required('Please select marriage status'),
 });
 
 const DEFAULT_BASIC_INFO = {
@@ -24,77 +32,41 @@ const DEFAULT_BASIC_INFO = {
 };
 
 function BasicInfo() {
-    const [open, setOpen] = useState(false);
-
-    const { personalDetails } = useContext(CandidateProfileContext);
-    console.log(personalDetails);
-    //prevent reload chrash
-    const basicInfo = personalDetails.basicInfo ?? DEFAULT_BASIC_INFO;
-    return (
-        <div>
-            <h2>Basic details</h2>
-            <div>
-                <label>name:</label>
-                <span>{basicInfo.name}</span>
-            </div>
-            <div>
-                <label htmlFor="">Age:</label>
-                <span>{basicInfo.age}</span>
-            </div>
-            <div>
-                <label htmlFor="">Gender:</label>
-                <span>{basicInfo.gender}</span>
-            </div>
-            <div>
-                <label htmlFor="">Married/Unmarried:</label>
-                <span>{basicInfo.married}</span>
-            </div>
-
-            <button onClick={() => setOpen(true)}>Edit</button>
-            {open ? <BasicInfoModel onClose={() => setOpen(false)} /> : null}
-        </div>
-    );
-}
-
-function BasicInfoModel({ onClose }) {
-    const [formData, setFormData] = useState(DEFAULT_BASIC_INFO);
-    const [error, setError] = useState({});
-    const [loading, setLoading] = useState(false);
-
     const { personalDetails, updateBasicDetails } = useContext(CandidateProfileContext);
-    const basicDetails = personalDetails?.basicInfo;
+
+    const basicInfo = personalDetails?.basicInfo ?? DEFAULT_BASIC_INFO;
+
+    const [open, setOpen] = useState(false);
+    const [formData, setFormData] = useState(DEFAULT_BASIC_INFO);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState({});
+
+    // Sync context data into editable state
     useEffect(() => {
-        if (basicDetails) {
-            setFormData({ ...DEFAULT_BASIC_INFO, ...basicDetails });
-        }
-    }, [basicDetails]);
+        setFormData({ ...DEFAULT_BASIC_INFO, ...basicInfo });
+    }, [basicInfo]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+        setFormData((p) => ({ ...p, [name]: value }));
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleSave = async () => {
         setError({});
         setLoading(true);
+
         try {
-            const payload = { ...formData, age: formData.age ? Number(formData.age) : null };
             await basicInfoSchema.validate(formData, { abortEarly: false });
-            const res = await updateBasicDetails(payload);
-            if (res.success) {
-                toast.success(res.message);
-            }
-            onClose();
-        } catch (error) {
-            if (error.name === 'ValidationError') {
-                const validationErrors = {};
-                error.inner.forEach((e) => {
-                    validationErrors[e.path] = e.message;
-                });
-                setError(validationErrors);
+            await updateBasicDetails({ ...formData, age: Number(formData.age) });
+            toast.success('Basic details updated');
+            setOpen(false);
+        } catch (err) {
+            if (err.name === 'ValidationError') {
+                const errs = {};
+                err.inner.forEach((e) => (errs[e.path] = e.message));
+                setError(errs);
             } else {
-                toast.error(error.message);
+                toast.error(err.message);
             }
         } finally {
             setLoading(false);
@@ -102,85 +74,113 @@ function BasicInfoModel({ onClose }) {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center ">
-            <div className="bg-white">
-                <h1>Basic info</h1>
-                <form onSubmit={handleSubmit}>
-                    <input
-                        className="border-2"
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        placeholder="name"
-                    />{' '}
-                    <br />
-                    {error.name && <p className="text-red-500">{error.name}</p>}
-                    <input
-                        className="border-2"
-                        type="number"
-                        name="age"
-                        value={formData.age}
-                        onChange={handleChange}
-                        placeholder="age"
-                    />{' '}
-                    <br />
-                    {error.age && <p className="text-red-500">{error.age}</p>}
-                    <div>
+        <div className="p-2 w-full">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4">
+                <h2 className={HEADER_CLASS}>Basic Details</h2>
+
+                {!open && (
+                    <button onClick={() => setOpen(true)} className="p-2 rounded hover:bg-gray-100">
+                        <Pencil className="w-5 h-4" />
+                    </button>
+                )}
+            </div>
+
+            {/* Fields */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {/* NAME */}
+                <div>
+                    <p className={LABEL_CLASS}>Name</p>
+                    {open ? (
                         <input
-                            type="radio"
-                            name="gender"
-                            value="male"
-                            checked={formData.gender === 'male'}
+                            type="text"
+                            name="name"
+                            value={formData.name}
                             onChange={handleChange}
+                            placeholder="Enter your name"
+                            className={INPUT_CLASS}
                         />
-                        Male
+                    ) : (
+                        <div className={READ_BOX_CLASS}>{basicInfo.name || '—'}</div>
+                    )}
+                    {error.name && <p className="text-red-500 text-sm mt-1">{error.name}</p>}
+                </div>
+
+                {/* AGE */}
+                <div>
+                    <p className={LABEL_CLASS}>Age</p>
+                    {open ? (
                         <input
-                            type="radio"
-                            name="gender"
-                            value="female"
-                            checked={formData.gender === 'female'}
+                            type="number"
+                            name="age"
+                            value={formData.age}
                             onChange={handleChange}
+                            placeholder="Enter age"
+                            className={INPUT_CLASS}
                         />
-                        Female
-                        <input
-                            type="radio"
+                    ) : (
+                        <div className={READ_BOX_CLASS}>{basicInfo.age ?? '—'}</div>
+                    )}
+                    {error.age && <p className="text-red-500 text-sm mt-1">{error.age}</p>}
+                </div>
+
+                {/* GENDER */}
+                <div>
+                    <p className={LABEL_CLASS}>Gender</p>
+                    {open ? (
+                        <select
                             name="gender"
-                            value="other"
-                            checked={formData.gender === 'other'}
+                            value={formData.gender}
                             onChange={handleChange}
-                        />
-                        Other
-                    </div>
-                    <br />
-                    {error.gender && <p className="text-red-500">{error.gender}</p>}
-                    <label htmlFor="married">Married : </label>
-                    <input
-                        type="radio"
-                        name="married"
-                        value="married"
-                        checked={formData.married === 'married'}
-                        onChange={handleChange}
-                    />
-                    Yes
-                    <input
-                        type="radio"
-                        name="married"
-                        value="unmarried"
-                        checked={formData.married === 'unmarried'}
-                        onChange={handleChange}
-                    />
-                    No
-                    <br />
-                    {error.married && <p className="text-red-500">{error.married}</p>}
-                    <button onClick={onClose} className="border-2" type="button">
+                            className={SELECT_CLASS}
+                        >
+                            <option value="">Select gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                        </select>
+                    ) : (
+                        <div className={`${READ_BOX_CLASS} capitalize`}>
+                            {basicInfo.gender || '—'}
+                        </div>
+                    )}
+                    {error.gender && <p className="text-red-500 text-sm mt-1">{error.gender}</p>}
+                </div>
+
+                {/* MARITAL */}
+                <div>
+                    <p className={LABEL_CLASS}>Marital Status</p>
+                    {open ? (
+                        <select
+                            name="married"
+                            value={formData.married}
+                            onChange={handleChange}
+                            className={SELECT_CLASS}
+                        >
+                            <option value="">Select marital status</option>
+                            <option value="married">Married</option>
+                            <option value="unmarried">Unmarried</option>
+                        </select>
+                    ) : (
+                        <div className={`${READ_BOX_CLASS} capitalize`}>
+                            {basicInfo.married || '—'}
+                        </div>
+                    )}
+                    {error.married && <p className="text-red-500 text-sm mt-1">{error.married}</p>}
+                </div>
+            </div>
+
+            {/* Actions */}
+            {open && (
+                <div className="mt-4 flex justify-end gap-3">
+                    <button onClick={() => setOpen(false)} className={ACTION_SECONDARY}>
                         Cancel
                     </button>
-                    <button type="submit" className="border-2">
+                    <button onClick={handleSave} disabled={loading} className={ACTION_PRIMARY}>
                         Save
                     </button>
-                </form>
-            </div>
+                </div>
+            )}
         </div>
     );
 }

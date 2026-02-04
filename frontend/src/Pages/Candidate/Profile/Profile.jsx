@@ -12,7 +12,7 @@ function Profile() {
     const { profile } = useContext(CandidateProfileContext);
 
     return (
-        <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm relative">
+        <div className="bg-white rounded-none p-4 sm:p-6 shadow-sm relative">
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
                 <h3 className="text-base font-semibold text-gray-800">Profile</h3>
