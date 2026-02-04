@@ -27,7 +27,6 @@ router.get('/get-profile', verifyToken, getProfile)
 router.put('/update-profile', verifyToken, multerProfileImageHandler, updateProfile)
 router.delete('/delete-profile-image', verifyToken, deleteProfileImage)
 
-
 // BASIC INFO
 router.get('/personal-details/basic', verifyToken, getBasicInfo)
 router.patch('/personal-details/basic', verifyToken, validate(candidatebasicInfoupdate), updateBasicInfo)

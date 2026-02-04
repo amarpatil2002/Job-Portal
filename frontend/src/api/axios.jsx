@@ -9,7 +9,7 @@ const PUBLIC_ROUTES = [
 ];
 
 const api = axios.create({
-    baseURL: 'http://localhost:7000/api',
+    baseURL: 'http://localhost:8800/api',
     withCredentials: true,
 });
 
