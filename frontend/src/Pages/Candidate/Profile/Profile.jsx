@@ -66,7 +66,7 @@ function Profile() {
 const ProfileModal = ({ onClose }) => {
     const [summary, setSummary] = useState('');
     const [profileImage, setProfileImage] = useState(null);
-    const [preview, setPreview] = useState(null);
+    const [preview, setPreview] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 

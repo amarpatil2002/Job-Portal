@@ -1,4 +1,4 @@
-import { createContext, useEffect, useState } from 'react';
+import { createContext, useEffect, useRef, useState } from 'react';
 import api from '../api/axios';
 
 export const CandidateProfileContext = createContext();
@@ -11,6 +11,8 @@ const CandidateProfileProvider = ({ children }) => {
         identityInfo: null,
     });
     const [educationDetails, setEducationDetails] = useState(null);
+
+    const ranOnce = useRef(false);
 
     const getProfileData = async () => {
         const res = await api.get('/get-profile');
@@ -36,15 +38,18 @@ const CandidateProfileProvider = ({ children }) => {
     };
 
     useEffect(() => {
+        if (ranOnce.current) return;
+        ranOnce.current = true;
+
         const init = async () => {
             try {
                 await getProfileData();
                 await getPersonalDetails();
-            } catch (error) {
-                console.log(error.response.data);
-                throw new Error(error?.response?.data?.message || 'Failed to load details');
+            } catch (err) {
+                console.error(err);
             }
         };
+
         init();
     }, []);
 

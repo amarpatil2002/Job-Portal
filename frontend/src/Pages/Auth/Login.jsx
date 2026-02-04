@@ -33,8 +33,9 @@ function Login() {
     };
 
     const handleSubmit = async (e) => {
-        if (loading) return;
         e.preventDefault();
+
+        if (loading) return;
         setErrors({});
 
         try {
@@ -43,7 +44,7 @@ function Login() {
             const data = await login(formData);
             if (data.success) {
                 toast.success(data.message);
-                navigate('candidate/dashboard');
+                navigate('/candidate');
             }
         } catch (error) {
             if (error.name === 'ValidationError') {
@@ -139,6 +140,7 @@ function Login() {
 
                 {/* SUBMIT */}
                 <button
+                    type="submit"
                     disabled={loading || !formData.email || !formData.password}
                     className="w-full cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed"
                 >

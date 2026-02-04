@@ -3,9 +3,13 @@ import { AuthContext } from '../context/AuthContext';
 import { Navigate, Outlet } from 'react-router-dom';
 
 function RoleRoute({ role }) {
-    const { user } = useContext(AuthContext);
+    const { user, loading } = useContext(AuthContext);
 
-    if (user?.role !== role) {
+    if (loading) {
+        return <div>Loading...</div>;
+    }
+
+    if (!user || user.role !== role) {
         return <Navigate to="/" replace />;
     }
 
