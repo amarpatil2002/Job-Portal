@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from 'react';
 import { number, object, string } from 'yup';
-import { CandidateProfileContext } from '../../context/CandidateProfileContext';
+import { CandidateProfileContext } from '../../context/candidate/CandidateProfileContext';
 import { toast } from 'react-toastify';
 import { Pencil, X } from 'lucide-react';
 import {} from '../../../src/css/uiClasses';
@@ -101,7 +101,7 @@ function BasicInfo() {
                             className={INPUT_CLASS}
                         />
                     ) : (
-                        <div className={READ_BOX_CLASS}>{basicInfo.name || '—'}</div>
+                        <div className={READ_BOX_CLASS}>{basicInfo.name || '-'}</div>
                     )}
                     {error.name && <p className="text-red-500 text-sm mt-1">{error.name}</p>}
                 </div>
@@ -119,7 +119,7 @@ function BasicInfo() {
                             className={INPUT_CLASS}
                         />
                     ) : (
-                        <div className={READ_BOX_CLASS}>{basicInfo.age ?? '—'}</div>
+                        <div className={READ_BOX_CLASS}>{basicInfo.age ?? '-'}</div>
                     )}
                     {error.age && <p className="text-red-500 text-sm mt-1">{error.age}</p>}
                 </div>
@@ -141,7 +141,7 @@ function BasicInfo() {
                         </select>
                     ) : (
                         <div className={`${READ_BOX_CLASS} capitalize`}>
-                            {basicInfo.gender || '—'}
+                            {basicInfo.gender || '-'}
                         </div>
                     )}
                     {error.gender && <p className="text-red-500 text-sm mt-1">{error.gender}</p>}
@@ -163,7 +163,7 @@ function BasicInfo() {
                         </select>
                     ) : (
                         <div className={`${READ_BOX_CLASS} capitalize`}>
-                            {basicInfo.married || '—'}
+                            {basicInfo.married || '-'}
                         </div>
                     )}
                     {error.married && <p className="text-red-500 text-sm mt-1">{error.married}</p>}

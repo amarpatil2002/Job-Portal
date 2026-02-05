@@ -26,7 +26,7 @@ const candidatePersonalDetailsSchema = new mongoose.Schema({
         motherName: { type: String },
         addharNumber: { type: String },
         panNumber: { type: String },
-        disability: { type: Boolean },
+        disability: { type: String },
         disabilityName: { type: String }
     }
 

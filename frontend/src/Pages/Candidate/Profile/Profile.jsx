@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from 'react';
 import { CircleUserRound, Form, Pencil } from 'lucide-react';
-import { CandidateProfileContext } from '../../../context/CandidateProfileContext';
+import { CandidateProfileContext } from '../../../context/candidate/CandidateProfileContext';
 import images from '../../../assets/allImages';
 import { toast } from 'react-toastify';
 

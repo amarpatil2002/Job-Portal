@@ -1,9 +1,8 @@
-import { useContext, useEffect, useState } from 'react';
-import { number, object, string } from 'yup';
-import { CandidateProfileContext } from '../../context/CandidateProfileContext';
+import React, { useContext, useEffect, useState } from 'react';
+import { CandidateProfileContext } from '../../context/candidate/CandidateProfileContext';
 import { toast } from 'react-toastify';
-import { Pencil, X } from 'lucide-react';
-import {} from '../../../src/css/uiClasses';
+import * as yup from 'yup';
+import { Pencil } from 'lucide-react';
 import {
     INPUT_CLASS,
     SELECT_CLASS,
@@ -14,14 +13,23 @@ import {
     ACTION_SECONDARY,
 } from '../../../src/css/uiClasses';
 
-const identityInfoSchema = object({
-    name: string().trim().required('Please enter name'),
-    age: number()
-        .transform((value, originalValue) => (originalValue === '' ? null : value))
-        .nullable()
-        .notRequired(),
-    gender: string().required('Please select gender'),
-    married: string().required('Please select marriage status'),
+const identityInfoSchema = yup.object({
+    fatherName: yup.string().required('Father name is required'),
+    motherName: yup.string().required('Mother name is required'),
+    addharNumber: yup
+        .string()
+        .required('Aadhar number is required')
+        .matches(/^\d{12}$/, 'Aadhar number must be 12 digits'),
+    panNumber: yup
+        .string()
+        .required('PAN number is required')
+        .matches(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, 'Enter a valid PAN number'),
+    disability: yup.string().oneOf(['yes', 'no']),
+    disabilityName: yup.string().when('disability', {
+        is: 'yes',
+        then: (schema) => schema.required('Please enter disability type'),
+        otherwise: (schema) => schema.notRequired().strip(),
+    }),
 });
 
 const DEFAULT_IDENTITY_INFO = {
@@ -29,46 +37,59 @@ const DEFAULT_IDENTITY_INFO = {
     motherName: '',
     addharNumber: '',
     panNumber: '',
-    disability: '',
+    disability: 'no',
     disabilityName: '',
 };
 
+const DIGIT_ONLY_FIELDS = ['addharNumber'];
+
 function IdentityInfo() {
-    const { personalDetails, updateIdentityDetails } = useContext(CandidateProfileContext);
-
-    const basicInfo = personalDetails?.identityInfo ?? DEFAULT_IDENTITY_INFO;
-
     const [open, setOpen] = useState(false);
     const [formData, setFormData] = useState(DEFAULT_IDENTITY_INFO);
-    const [loading, setLoading] = useState(false);
     const [error, setError] = useState({});
+    const [loading, setLoading] = useState(false);
 
-    // Sync context data into editable state
+    const { updateIdentityDetails, personalDetails } = useContext(CandidateProfileContext);
+    const identityInfo = personalDetails.identityInfo ?? DEFAULT_IDENTITY_INFO;
+
     useEffect(() => {
-        setFormData({ ...DEFAULT_IDENTITY_INFO, ...basicInfo });
-    }, [basicInfo]);
+        setFormData((prev) => ({ ...prev, ...identityInfo }));
+    }, [identityInfo]);
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData((p) => ({ ...p, [name]: value }));
+        const { value, name } = e.target;
+
+        if (DIGIT_ONLY_FIELDS.includes(name)) {
+            if (!/^\d*$/.test(value)) return;
+        }
+
+        setFormData((prev) => {
+            if (name == 'disability' && value === 'no') {
+                return { ...prev, disability: value, disabilityName: '' };
+            }
+            return { ...prev, [name]: value };
+        });
     };
 
-    const handleSave = async () => {
+    const handleSubmit = async (e) => {
+        e.preventDefault();
         setError({});
         setLoading(true);
-
         try {
             await identityInfoSchema.validate(formData, { abortEarly: false });
-            await updateIdentityDetails(formData);
-            toast.success('Basic details updated');
-            setOpen(false);
-        } catch (err) {
-            if (err.name === 'ValidationError') {
-                const errs = {};
-                err.inner.forEach((e) => (errs[e.path] = e.message));
-                setError(errs);
+            const res = await updateIdentityDetails(formData);
+            if (res.success) {
+                toast.success(res.message);
+                setOpen(false);
+            }
+        } catch (error) {
+            console.log(error);
+            if (error.name === 'ValidationError') {
+                const errors = {};
+                error.inner.forEach((e) => (errors[e.path] = e.message));
+                setError(errors);
             } else {
-                toast.error(err.message);
+                toast.error(error.message);
             }
         } finally {
             setLoading(false);
@@ -76,113 +97,168 @@ function IdentityInfo() {
     };
 
     return (
-        <div className="p-2 w-full">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-4">
-                <h2 className={HEADER_CLASS}>Identity Details</h2>
+        <div className="p-4 w-full bg-white">
+            <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                    <h2 className={HEADER_CLASS}>Identity Information</h2>
 
-                {!open && (
-                    <button onClick={() => setOpen(true)} className="p-2 rounded hover:bg-gray-100">
-                        <Pencil className="w-5 h-4" />
-                    </button>
+                    {!open && (
+                        <button
+                            type="button"
+                            onClick={() => setOpen(true)}
+                            className="p-2 rounded hover:bg-gray-100"
+                        >
+                            <Pencil className="w-5 h-4" />
+                        </button>
+                    )}
+                </div>
+
+                {/* Fields */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {/* Father Name */}
+                    <div>
+                        <label className={LABEL_CLASS}>Father Name</label>
+                        {open ? (
+                            <input
+                                name="fatherName"
+                                value={formData.fatherName}
+                                onChange={handleChange}
+                                className={INPUT_CLASS}
+                            />
+                        ) : (
+                            <div className={READ_BOX_CLASS}>{identityInfo.fatherName || '-'}</div>
+                        )}
+                        {error.fatherName && (
+                            <p className="text-red-600 text-sm">{error.fatherName}</p>
+                        )}
+                    </div>
+
+                    {/* Mother Name */}
+                    <div>
+                        <label className={LABEL_CLASS}>Mother Name</label>
+                        {open ? (
+                            <input
+                                name="motherName"
+                                value={formData.motherName}
+                                onChange={handleChange}
+                                className={INPUT_CLASS}
+                            />
+                        ) : (
+                            <div className={READ_BOX_CLASS}>{identityInfo.motherName || '-'}</div>
+                        )}
+                        {error.motherName && (
+                            <p className="text-red-600 text-sm">{error.motherName}</p>
+                        )}
+                    </div>
+
+                    {/* Aadhar */}
+                    <div>
+                        <label className={LABEL_CLASS}>Aadhar Number</label>
+                        {open ? (
+                            <input
+                                name="addharNumber"
+                                value={formData.addharNumber}
+                                onChange={handleChange}
+                                className={INPUT_CLASS}
+                                maxLength={12}
+                            />
+                        ) : (
+                            <div className={READ_BOX_CLASS}>{identityInfo.addharNumber || '-'}</div>
+                        )}
+                        {error.addharNumber && (
+                            <p className="text-red-600 text-sm">{error.addharNumber}</p>
+                        )}
+                    </div>
+
+                    {/* PAN */}
+                    <div>
+                        <label className={LABEL_CLASS}>PAN Number</label>
+                        {open ? (
+                            <input
+                                name="panNumber"
+                                value={formData.panNumber}
+                                onChange={handleChange}
+                                className={INPUT_CLASS}
+                                maxLength={10}
+                            />
+                        ) : (
+                            <div className={READ_BOX_CLASS}>{identityInfo.panNumber || '-'}</div>
+                        )}
+                        {error.panNumber && (
+                            <p className="text-red-600 text-sm">{error.panNumber}</p>
+                        )}
+                    </div>
+
+                    {/* Disability */}
+                    <div>
+                        <label className={LABEL_CLASS}>Disability</label>
+                        {open ? (
+                            <select
+                                name="disability"
+                                value={formData.disability}
+                                onChange={handleChange}
+                                className={SELECT_CLASS}
+                            >
+                                <option value="no">No</option>
+                                <option value="yes">Yes</option>
+                            </select>
+                        ) : (
+                            <div className={`${READ_BOX_CLASS} capitalize`}>
+                                {identityInfo.disability || '—'}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Disability Name */}
+                    <div>
+                        <label className={LABEL_CLASS}>Disability Type</label>
+                        {open ? (
+                            <input
+                                name="disabilityName"
+                                value={formData.disabilityName}
+                                onChange={handleChange}
+                                disabled={formData.disability !== 'yes'}
+                                placeholder={
+                                    formData.disability === 'yes'
+                                        ? 'Enter disability type'
+                                        : 'Not applicable'
+                                }
+                                className={`${INPUT_CLASS} ${
+                                    formData.disability !== 'yes'
+                                        ? 'bg-gray-100 cursor-not-allowed'
+                                        : ''
+                                }`}
+                            />
+                        ) : (
+                            <div className={READ_BOX_CLASS}>
+                                {identityInfo.disability === 'yes'
+                                    ? identityInfo.disabilityName || '-'
+                                    : 'Not applicable'}
+                            </div>
+                        )}
+                        {error.disabilityName && (
+                            <p className="text-red-600 text-sm">{error.disabilityName}</p>
+                        )}
+                    </div>
+                </div>
+
+                {/* Actions */}
+                {open && (
+                    <div className="flex justify-end gap-3 pt-4">
+                        <button
+                            type="button"
+                            onClick={() => setOpen(false)}
+                            className={ACTION_SECONDARY}
+                        >
+                            Cancel
+                        </button>
+                        <button type="submit" disabled={loading} className={ACTION_PRIMARY}>
+                            Save
+                        </button>
+                    </div>
                 )}
-            </div>
-
-            {/* Fields */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {/* NAME */}
-                <div>
-                    <p className={LABEL_CLASS}>Name</p>
-                    {open ? (
-                        <input
-                            type="text"
-                            name="fatherName"
-                            value={formData.fatherName}
-                            onChange={handleChange}
-                            placeholder="Enter your name"
-                            className={INPUT_CLASS}
-                        />
-                    ) : (
-                        <div className={READ_BOX_CLASS}>{basicInfo.name || '—'}</div>
-                    )}
-                    {error.name && <p className="text-red-500 text-sm mt-1">{error.name}</p>}
-                </div>
-
-                {/* AGE */}
-                <div>
-                    <p className={LABEL_CLASS}>Age</p>
-                    {open ? (
-                        <input
-                            type="number"
-                            name="age"
-                            value={formData.age}
-                            onChange={handleChange}
-                            placeholder="Enter age"
-                            className={INPUT_CLASS}
-                        />
-                    ) : (
-                        <div className={READ_BOX_CLASS}>{basicInfo.age ?? '—'}</div>
-                    )}
-                    {error.age && <p className="text-red-500 text-sm mt-1">{error.age}</p>}
-                </div>
-
-                {/* GENDER */}
-                <div>
-                    <p className={LABEL_CLASS}>Gender</p>
-                    {open ? (
-                        <select
-                            name="gender"
-                            value={formData.gender}
-                            onChange={handleChange}
-                            className={SELECT_CLASS}
-                        >
-                            <option value="">Select gender</option>
-                            <option value="male">Male</option>
-                            <option value="female">Female</option>
-                            <option value="other">Other</option>
-                        </select>
-                    ) : (
-                        <div className={`${READ_BOX_CLASS} capitalize`}>
-                            {basicInfo.gender || '—'}
-                        </div>
-                    )}
-                    {error.gender && <p className="text-red-500 text-sm mt-1">{error.gender}</p>}
-                </div>
-
-                {/* MARITAL */}
-                <div>
-                    <p className={LABEL_CLASS}>Marital Status</p>
-                    {open ? (
-                        <select
-                            name="married"
-                            value={formData.married}
-                            onChange={handleChange}
-                            className={SELECT_CLASS}
-                        >
-                            <option value="">Select marital status</option>
-                            <option value="married">Married</option>
-                            <option value="unmarried">Unmarried</option>
-                        </select>
-                    ) : (
-                        <div className={`${READ_BOX_CLASS} capitalize`}>
-                            {basicInfo.married || '—'}
-                        </div>
-                    )}
-                    {error.married && <p className="text-red-500 text-sm mt-1">{error.married}</p>}
-                </div>
-            </div>
-
-            {/* Actions */}
-            {open && (
-                <div className="mt-4 flex justify-end gap-3">
-                    <button onClick={() => setOpen(false)} className={ACTION_SECONDARY}>
-                        Cancel
-                    </button>
-                    <button onClick={handleSave} disabled={loading} className={ACTION_PRIMARY}>
-                        Save
-                    </button>
-                </div>
-            )}
+            </form>
         </div>
     );
 }

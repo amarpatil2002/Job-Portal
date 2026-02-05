@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { CandidateProfileContext } from '../../context/CandidateProfileContext';
+import { CandidateProfileContext } from '../../context/candidate/CandidateProfileContext';
 import { toast } from 'react-toastify';
 import * as yup from 'yup';
 import { Pencil } from 'lucide-react';
@@ -121,7 +121,7 @@ function ContactInfo() {
                                 className={INPUT_CLASS}
                             />
                         ) : (
-                            <div className={READ_BOX_CLASS}>{contactInfo.contactNumber || '—'}</div>
+                            <div className={READ_BOX_CLASS}>{contactInfo.contactNumber || '-'}</div>
                         )}
                         {error.contactNumber && (
                             <p className="text-red-600 text-sm mt-1">{error.contactNumber}</p>
@@ -146,7 +146,7 @@ function ContactInfo() {
                                 className={INPUT_CLASS}
                             />
                         ) : (
-                            <div className={READ_BOX_CLASS}>{contactInfo.address || '—'}</div>
+                            <div className={READ_BOX_CLASS}>{contactInfo.address || '-'}</div>
                         )}
                         {error.address && (
                             <p className="text-red-600 text-sm mt-1">{error.address}</p>
@@ -165,7 +165,7 @@ function ContactInfo() {
                                 className={INPUT_CLASS}
                             />
                         ) : (
-                            <div className={READ_BOX_CLASS}>{contactInfo.city || '—'}</div>
+                            <div className={READ_BOX_CLASS}>{contactInfo.city || '-'}</div>
                         )}
                         {error.city && <p className="text-red-600 text-sm mt-1">{error.city}</p>}
                     </div>
@@ -182,7 +182,7 @@ function ContactInfo() {
                                 className={INPUT_CLASS}
                             />
                         ) : (
-                            <div className={READ_BOX_CLASS}>{contactInfo.state || '—'}</div>
+                            <div className={READ_BOX_CLASS}>{contactInfo.state || '-'}</div>
                         )}
                         {error.state && <p className="text-red-600 text-sm mt-1">{error.state}</p>}
                     </div>
@@ -199,7 +199,7 @@ function ContactInfo() {
                                 className={INPUT_CLASS}
                             />
                         ) : (
-                            <div className={READ_BOX_CLASS}>{contactInfo.country || '—'}</div>
+                            <div className={READ_BOX_CLASS}>{contactInfo.country || '-'}</div>
                         )}
                         {error.country && (
                             <p className="text-red-600 text-sm mt-1">{error.country}</p>

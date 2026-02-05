@@ -4,17 +4,21 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { Bell, ChevronDown, Menu, X } from 'lucide-react';
 import images from '../../assets/allImages';
 import { toast } from 'react-toastify';
+import { CandidateProfileContext } from '../../context/candidate/CandidateProfileContext';
 
 function CandidateSideBar() {
     const [open, setOpen] = useState(false); // profile dropdown
     const [mobileOpen, setMobileOpen] = useState(false); // sidebar drawer
 
     const { user, logout } = useContext(AuthContext);
+    const { resetCandidateProfile } = useContext(CandidateProfileContext);
+
     const navigate = useNavigate();
 
     const handleLogout = async () => {
         await logout();
-        toast.success('Logged out successfully');
+        toast.success('Logged out');
+        resetCandidateProfile();
         navigate('/login');
     };
 

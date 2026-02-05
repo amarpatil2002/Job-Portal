@@ -38,20 +38,19 @@ exports.candidatContactInfo = yup.object({
 });
 
 exports.candidatIdentityInfo = yup.object({
-    fathersName: yup
+    fatherName: yup
         .string()
         .trim(),
-
-    mothersName: yup
+    motherName: yup
         .string()
         .trim(),
     addharNumber: yup
         .string()
         .trim(),
     panNumber: yup
-        .number(),
+        .string(),
     disability: yup
-        .boolean(),
+        .string(),
     disabilityName: yup
         .string()
         .trim(),

@@ -1,5 +1,6 @@
-import { createContext, useEffect, useRef, useState } from 'react';
-import api from '../api/axios';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import api from '../../api/axios';
+import { AuthContext } from '../AuthContext';
 
 export const CandidateProfileContext = createContext();
 
@@ -12,7 +13,7 @@ const CandidateProfileProvider = ({ children }) => {
     });
     const [educationDetails, setEducationDetails] = useState(null);
 
-    const ranOnce = useRef(false);
+    const { user } = useContext(AuthContext);
 
     const getProfileData = async () => {
         const res = await api.get('/get-profile');
@@ -27,31 +28,48 @@ const CandidateProfileProvider = ({ children }) => {
         ]);
 
         const data = {
-            basicInfo: results[0].status === 'fulfilled' ? results[0].value.data.data : null,
+            basicInfo: results[0].status === 'fulfilled' ? results[0].value.data.data : '',
             contactInfo: results[1].status === 'fulfilled' ? results[1].value.data.data : null,
             identityInfo: results[2].status === 'fulfilled' ? results[2].value.data.data : null,
         };
-
-        console.log(data);
         setPersonalDetails(data);
         return data;
     };
 
     useEffect(() => {
-        if (ranOnce.current) return;
-        ranOnce.current = true;
+        if (!user) {
+            // user is logged out → clear state
+            setProfile(null);
+            setPersonalDetails({
+                basicInfo: null,
+                contactInfo: null,
+                identityInfo: null,
+            });
+            setEducationDetails(null);
+            return;
+        }
 
         const init = async () => {
             try {
                 await getProfileData();
                 await getPersonalDetails();
             } catch (err) {
-                console.error(err);
+                console.error('Profile init failed:', err);
             }
         };
 
         init();
-    }, []);
+    }, [user]);
+
+    const resetCandidateProfile = () => {
+        setProfile(null);
+        setPersonalDetails({
+            basicInfo: null,
+            contactInfo: null,
+            identityInfo: null,
+        });
+        setEducationDetails(null);
+    };
 
     const profileDetails = async (profileData) => {
         try {
@@ -95,11 +113,12 @@ const CandidateProfileProvider = ({ children }) => {
     };
 
     const updateIdentityDetails = async (identityInfoData) => {
+        console.log(identityInfoData);
         try {
             const res = await api.patch('/personal-details/identity', identityInfoData, {
                 headers: { 'Content-Type': 'application/json' },
             });
-
+            console.log(res);
             await getPersonalDetails();
             return res.data;
         } catch (error) {
@@ -119,6 +138,7 @@ const CandidateProfileProvider = ({ children }) => {
                 updateBasicDetails,
                 updateContactDetails,
                 updateIdentityDetails,
+                resetCandidateProfile,
             }}
         >
             {children}
