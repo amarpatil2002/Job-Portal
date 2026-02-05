@@ -28,7 +28,7 @@ const CandidateProfileProvider = ({ children }) => {
         ]);
 
         const data = {
-            basicInfo: results[0].status === 'fulfilled' ? results[0].value.data.data : '',
+            basicInfo: results[0].status === 'fulfilled' ? results[0].value.data.data : null,
             contactInfo: results[1].status === 'fulfilled' ? results[1].value.data.data : null,
             identityInfo: results[2].status === 'fulfilled' ? results[2].value.data.data : null,
         };
@@ -36,30 +36,20 @@ const CandidateProfileProvider = ({ children }) => {
         return data;
     };
 
-    useEffect(() => {
-        if (!user) {
-            // user is logged out → clear state
-            setProfile(null);
-            setPersonalDetails({
-                basicInfo: null,
-                contactInfo: null,
-                identityInfo: null,
-            });
-            setEducationDetails(null);
-            return;
-        }
+    const getEducationDetails = async () => {
+        const results = await Promise.allSettled([
+            api.get('/education-details/certificate'),
+            api.get('/education-details/qualification'),
+        ]);
 
-        const init = async () => {
-            try {
-                await getProfileData();
-                await getPersonalDetails();
-            } catch (err) {
-                console.error('Profile init failed:', err);
-            }
+        const data = {
+            certificates: results[0].status === 'fulfilled' ? results[0].value.data.data : null,
+            qualifications: results[1].status === 'fulfilled' ? results[1].value.data.data : null,
         };
-
-        init();
-    }, [user]);
+        // console.log(data);
+        setEducationDetails(data);
+        return data;
+    };
 
     const resetCandidateProfile = () => {
         setProfile(null);
@@ -70,6 +60,26 @@ const CandidateProfileProvider = ({ children }) => {
         });
         setEducationDetails(null);
     };
+
+    useEffect(() => {
+        if (!user) {
+            // user is logged out → clear state
+            resetCandidateProfile();
+            return;
+        }
+
+        const init = async () => {
+            try {
+                await getProfileData();
+                await getPersonalDetails();
+                await getEducationDetails();
+            } catch (err) {
+                console.error('Profile init failed:', err);
+            }
+        };
+
+        init();
+    }, [user]);
 
     const profileDetails = async (profileData) => {
         try {
@@ -126,6 +136,54 @@ const CandidateProfileProvider = ({ children }) => {
         }
     };
 
+    //Education
+
+    const addEducation = async (educationData) => {
+        try {
+            console.log(educationData);
+            const res = await api.post('/education-details/qualification', educationData, {
+                headers: { 'Content-Type': 'application/json' },
+            });
+            getEducationDetails();
+            return res;
+        } catch (error) {
+            // console.log(error);
+            throw new Error(error.response?.data?.message);
+        }
+    };
+
+    const updateEducation = async (qualificationId, educationData) => {
+        try {
+            const res = await api.patch(
+                `/education-details/qualification/${qualificationId}`,
+                educationData,
+                {
+                    headers: { 'Content-Type': 'application/json' },
+                }
+            );
+            getEducationDetails();
+            return res;
+        } catch (error) {
+            throw new Error(error.response?.data?.message);
+        }
+    };
+
+    const deleteEducation = async (qualificationId, educationData) => {
+        try {
+            const res = await api.delete(
+                `/education-details/qualification/${qualificationId}`,
+                educationData,
+                {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                }
+            );
+            getEducationDetails();
+            return res;
+        } catch (error) {
+            throw new Error(error.response?.data?.message);
+        }
+    };
+
     return (
         <CandidateProfileContext.Provider
             value={{
@@ -139,6 +197,9 @@ const CandidateProfileProvider = ({ children }) => {
                 updateContactDetails,
                 updateIdentityDetails,
                 resetCandidateProfile,
+                addEducation,
+                updateEducation,
+                deleteEducation,
             }}
         >
             {children}

@@ -90,6 +90,7 @@ exports.updateEducation = async (req, res) => {
             }
         }
 
+        console.log(req.body);
         if (!Object.keys(updatedFields).length) {
             return res.status(400).json({ success: false, message: "Noting to update" })
         }
