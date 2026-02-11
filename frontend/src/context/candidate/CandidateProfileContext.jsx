@@ -137,7 +137,6 @@ const CandidateProfileProvider = ({ children }) => {
     };
 
     //Education
-
     const addEducation = async (educationData) => {
         try {
             console.log(educationData);
@@ -145,10 +144,13 @@ const CandidateProfileProvider = ({ children }) => {
                 headers: { 'Content-Type': 'application/json' },
             });
             getEducationDetails();
-            return res;
+            return res.data;
         } catch (error) {
-            // console.log(error);
-            throw new Error(error.response?.data?.message);
+            if (error.response) {
+                throw error.response;
+            }
+
+            throw new Error('Network error');
         }
     };
 
@@ -162,9 +164,13 @@ const CandidateProfileProvider = ({ children }) => {
                 }
             );
             getEducationDetails();
-            return res;
+            return res.data;
         } catch (error) {
-            throw new Error(error.response?.data?.message);
+            if (error.response) {
+                throw error.response;
+            }
+
+            throw new Error('Network error');
         }
     };
 
@@ -178,9 +184,28 @@ const CandidateProfileProvider = ({ children }) => {
                 }
             );
             getEducationDetails();
-            return res;
+            return res.data;
         } catch (error) {
-            throw new Error(error.response?.data?.message);
+            if (error.response) {
+                throw error.response;
+            }
+
+            throw new Error('Network error');
+        }
+    };
+
+    //Ceritificate
+    const updadateCertificate = async (formData) => {
+        try {
+            const res = await api.put('/education-details/certificate', formData);
+            getEducationDetails();
+            return res.data;
+        } catch (error) {
+            if (error.response) {
+                throw error.response;
+            }
+
+            throw new Error('Network error');
         }
     };
 
@@ -200,6 +225,7 @@ const CandidateProfileProvider = ({ children }) => {
                 addEducation,
                 updateEducation,
                 deleteEducation,
+                updadateCertificate,
             }}
         >
             {children}

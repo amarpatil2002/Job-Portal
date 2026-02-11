@@ -18,3 +18,9 @@ export const ACTION_PRIMARY =
 
 export const ACTION_SECONDARY =
     'px-5 py-2 border border-gray-300 text-sm hover:bg-gray-100';
+
+
+export const INPUT_ERROR =
+    'border-red-500 focus:border-red-500 focus:ring-red-500';
+
+export const ERROR_TEXT = 'mt-1 text-xs text-red-600';
