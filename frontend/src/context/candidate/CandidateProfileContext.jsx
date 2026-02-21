@@ -194,17 +194,44 @@ const CandidateProfileProvider = ({ children }) => {
         }
     };
 
-    //Ceritificate
-    const updadateCertificate = async (formData) => {
+    const updadateHighestEducation = async (formData) => {
         try {
-            const res = await api.put('/education-details/certificate', formData);
-            getEducationDetails();
+            const res = await api.put('/education-details/highesteducation', formData);
+            await getEducationDetails();
             return res.data;
         } catch (error) {
             if (error.response) {
                 throw error.response;
             }
+            throw new Error('Network error');
+        }
+    };
 
+    // ============= CERTIFICATE =============
+    const addCertificate = async (formData) => {
+        try {
+            const res = await api.post('/education-details/certificate', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            await getEducationDetails();
+            return res.data;
+        } catch (error) {
+            if (error.response) {
+                throw error.response;
+            }
+            throw new Error('Network error');
+        }
+    };
+
+    const deleteCertificate = async (certificateId) => {
+        try {
+            const res = await api.delete(`/education-details/certificate/${certificateId}`);
+            await getEducationDetails();
+            return res.data;
+        } catch (error) {
+            if (error.response) {
+                throw error.response;
+            }
             throw new Error('Network error');
         }
     };
@@ -225,7 +252,9 @@ const CandidateProfileProvider = ({ children }) => {
                 addEducation,
                 updateEducation,
                 deleteEducation,
-                updadateCertificate,
+                updadateHighestEducation,
+                addCertificate,
+                deleteCertificate,
             }}
         >
             {children}

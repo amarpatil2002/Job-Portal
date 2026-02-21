@@ -1,71 +1,49 @@
-const mongoose = require('mongoose')
+const mongoose = require('mongoose');
 
-const candidateWorkDetailsSchema = new mongoose.Schema({
+const experienceSchema = new mongoose.Schema(
+    {
+        designation: { type: String, trim: true, default: '' },
+        companyName: { type: String, trim: true, default: '' },
+        CTC: { type: Number, default: 0 },
+        location: { type: String, trim: true, default: '' },
+        employeeType: { type: String, trim: true, default: '' },
+    },
+    { _id: true }
+);
 
-    currentDesignation: {
-        type: String
+const projectSchema = new mongoose.Schema(
+    {
+        projectTitle: { type: String, trim: true, default: '' },
+        projectStatus: { type: String, trim: true, default: '' },
+        projectDuration: { type: String, trim: true, default: '' },
+        projectDetails: { type: String, trim: true, default: '' },
+        role: { type: String, trim: true, default: '' },
+        skillsUsed: { type: String, trim: true, default: '' },
+        projectUrl: { type: String, trim: true, default: '' },
     },
-    workExperience: {
-        type: Number
-    },
-    noticePeriod: {
-        type: String
-    },
-    resume: {
-        type: String
-    },
-    skills: {
-        type: Array
-    },
-    preferredLocation: {
-        type: String
-    },
-    experience: [
-        {
-            designation: {
-                type: String
-            },
-            companyName: {
-                type: String
-            },
-            CTC: {
-                type: Number
-            },
-            location: {
-                type: String
-            },
-            employeeType: {
-                type: String
-            },
-        }
-    ],
-    projects: [
-        {
-            projectTitle: {
-                type: String
-            },
-            ProjectStatus: {
-                type: String
-            },
-            ProjectDuration: {
-                type: String
-            },
-            projectDetails: {
-                type: String
-            },
-            role: {
-                type: String
-            },
-            skillsUsed: {
-                type: String
-            },
-            projectUrl: {
-                type: String
-            }
-        }
-    ]
-}, { timestamps: true })
+    { _id: true }
+);
 
-const candidateWorkDetailsModel = mongoose.model("CandidateWorkDetails", candidateWorkDetailsSchema)
+/* ---------- Main Schema ---------- */
 
-module.exports = candidateWorkDetailsModel
+const candidateWorkDetailsSchema = new mongoose.Schema(
+    {
+        experience: {
+            type: [experienceSchema],
+            default: [],
+        },
+
+        projects: {
+            type: [projectSchema],
+            default: [],
+        },
+    },
+    { timestamps: true }
+);
+
+const candidateWorkDetailsModel = mongoose.model(
+    'CandidateWorkDetails',
+    candidateWorkDetailsSchema
+);
+
+module.exports = candidateWorkDetailsModel;

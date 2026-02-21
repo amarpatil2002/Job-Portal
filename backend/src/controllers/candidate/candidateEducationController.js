@@ -226,103 +226,79 @@ exports.getAllEducation = async (req, res) => {
 
 //for certificate And higher qualification
 
-// exports.updateCertificate = async (req, res) => {
-//     const session = await mongoose.startSession()
-//     session.startTransaction()
+exports.updateHighestEducation = async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-//     let newAllCertificates = []
+    try {
+        const userId = req.user.id;
+        const { highestEducation } = req.body;
 
-//     try {
-//         const userId = req.user.id
-//         const { highestEducation } = req.body
-//         if (!highestEducation) {
-//             return res.status(400).json({ success: false, message: "Highest education required" })
-//         }
+        if (!highestEducation || !highestEducation.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: "Highest education is required",
+            });
+        }
 
-//         const candidate = await candidateModel.findOne({ userId }).session(session)
-//         if (!candidate) {
-//             return res.status(404).json({ success: false, message: "Candidate not found" })
-//         }
+        const candidate = await candidateModel.findOne({ userId }).session(session);
 
-//         let educationDetailId = candidate.candidateEducationDetailsId
-//         if (!educationDetailId) {
-//             const newEducationDetails = await candidateEducationDetailsModel.create(
-//                 [{
-//                     certifates: []
-//                 }],
-//                 { session }
-//             )
+        if (!candidate) {
+            await session.abortTransaction();
+            session.endSession();
 
-//             await candidateModel.updateOne({ _id: candidate._id }, { candidateEducationDetailsId: newEducationDetails[0]._id }, { session })
+            return res.status(404).json({
+                success: false,
+                message: "Candidate not found",
+            });
+        }
 
-//             educationDetailId = newEducationDetails[0]._id
-//         }
+        let educationDetailId = candidate.candidateEducationDetailsId;
 
-//         const educationDetails = await candidateEducationDetailsModel.findOne({ _id: educationDetailId })
-//         const oldCertificates = educationDetails?.certificates || []
+        if (!educationDetailId) {
+            const newEducationDetails = await candidateEducationDetailsModel.create(
+                [{ highestEducation: "", certificates: [] }],
+                { session }
+            );
 
-//         const upload = await Promise.all(
-//             req.files.map((file) => uploadFileOnCloudinary(file.path, "Candidate-certificate"))
-//         )
+            educationDetailId = newEducationDetails[0]._id;
 
-//         let names = Array.isArray(req.body.certificateName) ? req.body.certificateName : [req.body.certificateName]
+            await candidateModel.updateOne(
+                { _id: candidate._id },
+                { candidateEducationDetailsId: educationDetailId },
+                { session }
+            );
+        }
 
-//         newAllCertificates = upload.map((file, index) => {
-//             return {
-//                 certificateName: names[index] || "Unnamed Certificate",
-//                 certificateFilePublicId: file?.publicId,
-//                 certificateFileUrl: file?.imageURL
-//             }
-//         })
+        await candidateEducationDetailsModel.updateOne(
+            { _id: educationDetailId },
+            { $set: { highestEducation: highestEducation.trim() } },
+            { session }
+        );
 
-//         const updateCertificate = {
-//             highestEducation: highestEducation,
-//             certificates: newAllCertificates
-//         }
+        await session.commitTransaction();
+        session.endSession();
 
-//         const updatedEducationData = await candidateEducationDetailsModel.updateOne(
-//             { _id: educationDetailId },
-//             {
-//                 $set: updateCertificate
-//             },
-//             { session }
-//         )
+        return res.status(200).json({
+            success: true,
+            message: "Highest education updated successfully",
+        });
 
-//         if (updatedEducationData.matchedCount === 0) {
-//             return res.status(400).json({ success: false, message: "Certificate & Highest qulification not created" })
-//         }
+    } catch (error) {
+        console.log(error);
 
-//         await session.commitTransaction()
-//         session.endSession()
+        await session.abortTransaction();
+        session.endSession();
+
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
+        });
+    }
+};
 
 
-//         if (newAllCertificates && oldCertificates) {
-//             await Promise.all(oldCertificates.map((certificate) =>
-//                 certificate.certificateFilePublicId ? cloudinary.uploader.destroy(certificate.certificateFilePublicId) : null
-//             ))
-//         }
-
-//         return res.status(200).json({ success: true, message: "Certificate & Highest qulification created successfully", data: updateCertificate })
-
-//     } catch (error) {
-//         console.log(error);
-
-//         await session.abortTransaction()
-//         session.endSession()
-
-//         if (req.file) {
-//             for (let file of req.file) {
-//                 if (file.publicId) {
-//                     await deleteFromCloudinary(file.publicId)
-//                 }
-//             }
-//         }
-
-//         return res.status(500).json({ success: false, message: "Internal server error" })
-//     }
-// }
-
-exports.updateCertificate = async (req, res) => {
+exports.addCertificates = async (req, res) => {
     const session = await mongoose.startSession();
     session.startTransaction();
 
@@ -330,7 +306,32 @@ exports.updateCertificate = async (req, res) => {
 
     try {
         const userId = req.user.id;
-        const { highestEducation } = req.body;
+        const { certificateName } = req.body;
+
+        if (!certificateName) {
+            return res.status(400).json({
+                success: false,
+                message: "Certificate name is required",
+            });
+        }
+        console.log(req.files);
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Please upload certificate file",
+            });
+        }
+
+        const namesArray = Array.isArray(certificateName)
+            ? certificateName
+            : [certificateName];
+
+        if (namesArray.length !== req.files.length) {
+            return res.status(400).json({
+                success: false,
+                message: "Each certificate must have a name",
+            });
+        }
 
         const candidate = await candidateModel.findOne({ userId }).session(session);
 
@@ -365,78 +366,21 @@ exports.updateCertificate = async (req, res) => {
             .findOne({ _id: educationDetailId })
             .session(session);
 
-        if (!educationDetails) {
-            await session.abortTransaction();
-            session.endSession();
+        const uploadResults = await Promise.all(
+            req.files.map(file =>
+                uploadFileOnCloudinary(file.path, "Candidate-certificate")
+            )
+        );
 
-            return res.status(404).json({
-                success: false,
-                message: "Education details not found",
-            });
-        }
+        uploadedCertificates = uploadResults;
 
-        if (highestEducation !== undefined) {
-            educationDetails.highestEducation = highestEducation;
-        }
+        const newCertificates = uploadResults.map((file, index) => ({
+            certificateName: namesArray[index].trim(),
+            certificateFilePublicId: file?.publicId,
+            certificateFileUrl: file?.imageURL,
+        }));
 
-        const hasFiles = req.files && req.files.length > 0;
-        const namesRaw = req.body.certificateName;
-
-        const namesArray = Array.isArray(namesRaw)
-            ? namesRaw
-            : namesRaw !== undefined
-                ? [namesRaw]
-                : [];
-
-        const hasNames = namesArray.some(name => name?.trim());
-
-        if (!hasFiles && hasNames) {
-            await session.abortTransaction();
-            session.endSession();
-
-            return res.status(400).json({
-                success: false,
-                message: "Please upload certificate file",
-            });
-        }
-
-        if (hasFiles && !hasNames) {
-            await session.abortTransaction();
-            session.endSession();
-
-            return res.status(400).json({
-                success: false,
-                message: "Please provide certificate name",
-            });
-        }
-
-        if (hasFiles && namesArray.length !== req.files.length) {
-            await session.abortTransaction();
-            session.endSession();
-
-            return res.status(400).json({
-                success: false,
-                message: "Each certificate must have a name",
-            });
-        }
-
-        if (hasFiles) {
-            const uploadResults = await Promise.all(
-                req.files.map(file =>
-                    uploadFileOnCloudinary(file.path, "Candidate-certificate")
-                )
-            );
-
-            uploadedCertificates = uploadResults;
-
-            const newCertificates = uploadResults.map((file, index) => ({
-                certificateName: namesArray[index].trim(),
-                certificateFilePublicId: file?.publicId,
-                certificateFileUrl: file?.imageURL,
-            }));
-
-            educationDetails.certificates.push(...newCertificates);
-        }
+        educationDetails.certificates.push(...newCertificates);
 
         await educationDetails.save({ session });
 
@@ -445,8 +389,8 @@ exports.updateCertificate = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            message: "Certificates / Education updated successfully",
-            data: educationDetails,
+            message: "Certificates added successfully",
+            data: educationDetails.certificates,
         });
 
     } catch (error) {
@@ -455,7 +399,7 @@ exports.updateCertificate = async (req, res) => {
         await session.abortTransaction();
         session.endSession();
 
-        /* ---------------- CLOUDINARY ROLLBACK (IMPORTANT) ---------------- */
+        /* Cloudinary rollback */
 
         if (uploadedCertificates.length > 0) {
             await Promise.all(
@@ -476,6 +420,7 @@ exports.updateCertificate = async (req, res) => {
 
 
 
+
 exports.getCertificate = async (req, res) => {
     try {
         const userId = req.user.id
@@ -493,7 +438,6 @@ exports.getCertificate = async (req, res) => {
             certificates: candidateEducationDetailsId.certificates || []
 
         }
-        console.log(updatedData);
         return res.status(200).json({ success: true, message: "Higher and Certificate details fetched successfully", data: updatedData })
 
     } catch (error) {
@@ -501,6 +445,94 @@ exports.getCertificate = async (req, res) => {
         return res.status(500).json({ success: false, message: "Internal server error" })
     }
 }
+
+
+exports.deleteCertificate = async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    let cloudinaryPublicId = null;
+
+    try {
+        const userId = req.user.id;
+        const { certificateId } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(certificateId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid certificate id",
+            });
+        }
+
+        const candidate = await candidateModel
+            .findOne({ userId })
+            .session(session);
+
+        if (!candidate) {
+            await session.abortTransaction();
+            session.endSession();
+
+            return res.status(404).json({
+                success: false,
+                message: "Candidate not found",
+            });
+        }
+
+        const educationDetails = await candidateEducationDetailsModel
+            .findOne({ _id: candidate.candidateEducationDetailsId })
+            .session(session);
+
+        if (!educationDetails) {
+            await session.abortTransaction();
+            session.endSession();
+
+            return res.status(404).json({
+                success: false,
+                message: "Education details not found",
+            });
+        }
+
+        const certificate = educationDetails.certificates.id(certificateId);
+
+        if (!certificate) {
+            await session.abortTransaction();
+            session.endSession();
+
+            return res.status(404).json({
+                success: false,
+                message: "Certificate not found",
+            });
+        }
+
+        cloudinaryPublicId = certificate.certificateFilePublicId;
+
+        certificate.deleteOne();
+        await educationDetails.save({ session });
+
+        await session.commitTransaction();
+        session.endSession();
+
+        if (cloudinaryPublicId) {
+            await cloudinary.uploader.destroy(cloudinaryPublicId);
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Certificate deleted successfully",
+        });
+
+    } catch (error) {
+        console.log(error);
+
+        await session.abortTransaction();
+        session.endSession();
+
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
+        });
+    }
+};
 
 
 
